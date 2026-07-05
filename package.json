@@ -40,5 +40,6 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"
-  }
+  },
+  "mcpName": "io.github.gamercc-apps/mockscreenshots-mcp"
 }
