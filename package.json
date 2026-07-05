@@ -1,0 +1,44 @@
+{
+  "name": "mockscreenshots-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Mock Screenshots — generate deep links to pixel-perfect fake chat & screenshot generators (iMessage, WhatsApp, Instagram, Telegram, Messenger, Snapchat).",
+  "type": "module",
+  "bin": {
+    "mockscreenshots-mcp": "server.mjs"
+  },
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "fake-chat-generator",
+    "fake-screenshot",
+    "screenshot-generator",
+    "imessage",
+    "whatsapp",
+    "mockscreenshots"
+  ],
+  "homepage": "https://mockscreenshots.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gamercc-apps/mockscreenshots-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gamercc-apps/mockscreenshots-mcp/issues"
+  },
+  "author": "gamercc-apps",
+  "license": "MIT",
+  "files": [
+    "server.mjs",
+    "server.json",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}

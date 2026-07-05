@@ -1,0 +1,16 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2024-11-05/server.schema.json",
+  "name": "io.github.mockscreenshots/mockscreenshots",
+  "description": "Generate deep links to pixel-perfect fake chat & screenshot generators (iMessage, WhatsApp, Instagram, Telegram, Messenger, Snapchat). Watermarked, for parody, education, design and fiction.",
+  "version": "0.1.0",
+  "homepage": "https://mockscreenshots.com",
+  "license": "MIT",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "mockscreenshots-mcp",
+      "version": "0.1.0",
+      "transport": { "type": "stdio" }
+    }
+  ]
+}
