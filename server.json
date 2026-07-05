@@ -2,14 +2,14 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2024-11-05/server.schema.json",
   "name": "io.github.gamercc-apps/mockscreenshots-mcp",
   "description": "Deep links to pixel-perfect fake chat & screenshot generators (iMessage, WhatsApp & more).",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "homepage": "https://mockscreenshots.com",
   "license": "MIT",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@gamercc-apps/mockscreenshots-mcp",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "transport": {
         "type": "stdio"
       }
