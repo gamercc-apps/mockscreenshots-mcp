@@ -1,5 +1,5 @@
 {
-  "name": "mockscreenshots-mcp",
+  "name": "@gamercc-apps/mockscreenshots-mcp",
   "version": "0.1.0",
   "description": "MCP server for Mock Screenshots — generate deep links to pixel-perfect fake chat & screenshot generators (iMessage, WhatsApp, Instagram, Telegram, Messenger, Snapchat).",
   "type": "module",
