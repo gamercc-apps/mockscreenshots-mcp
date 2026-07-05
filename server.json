@@ -7,13 +7,15 @@
     "url": "https://github.com/gamercc-apps/mockscreenshots-mcp",
     "source": "github"
   },
-  "version": "0.0.0",
+  "version": "0.1.4",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@gamercc-apps/mockscreenshots-mcp",
-      "version": "0.0.0",
-      "transport": { "type": "stdio" }
+      "version": "0.1.4",
+      "transport": {
+        "type": "stdio"
+      }
     }
   ]
 }
