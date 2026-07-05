@@ -1,12 +1,14 @@
-name: Publish to npm
+name: Publish
 
-# Publishes @gamercc-apps/mockscreenshots-mcp when you push a version tag.
+# On a version tag: publish to npm + the official MCP registry.
 # Update flow:  npm version patch  &&  git push --follow-tags
-# Needs repo secret NPM_TOKEN = a stravanama Automation token (bypasses 2FA).
-
 on:
   push:
     tags: ['v*']
+
+permissions:
+  id-token: write   # GitHub OIDC → proves io.github.gamercc-apps ownership to the MCP registry
+  contents: read
 
 jobs:
   publish:
@@ -17,6 +19,14 @@ jobs:
         with:
           node-version: 22
           registry-url: 'https://registry.npmjs.org'
-      - run: npm publish --access public
+      - name: Publish to npm
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Install mcp-publisher
+        run: curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+      - name: Publish to MCP registry
+        run: |
+          sleep 20            # let npm propagate the mcpName link before validation
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish

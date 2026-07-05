@@ -8,7 +8,8 @@
   },
   "main": "server.mjs",
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "version": "node scripts/sync-version.mjs && git add server.json"
   },
   "keywords": [
     "mcp",
