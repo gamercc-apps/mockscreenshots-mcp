@@ -20,13 +20,28 @@ jobs:
           node-version: 22
           registry-url: 'https://registry.npmjs.org'
       - name: Publish to npm
-        run: npm publish --access public
+        # Idempotent: skip if this version is already on npm, so the job can be
+        # safely re-run when a LATER step (e.g. the registry OIDC login) fails
+        # transiently without erroring on "cannot publish over existing version".
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VER=$(node -p "require('./package.json').version")
+          if npm view "$NAME@$VER" version >/dev/null 2>&1; then
+            echo "npm already has $NAME@$VER — skipping publish"
+          else
+            npm publish --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Install mcp-publisher
         run: curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
       - name: Publish to MCP registry
+        # Retry the OIDC login — the GitHub OIDC token endpoint occasionally
+        # returns a transient 503 (v0.1.5 hit this).
         run: |
           sleep 20            # let npm propagate the mcpName link before validation
-          ./mcp-publisher login github-oidc
+          for i in 1 2 3; do
+            ./mcp-publisher login github-oidc && break
+            echo "OIDC login attempt $i failed; retrying in 15s..."; sleep 15
+          done
           ./mcp-publisher publish
