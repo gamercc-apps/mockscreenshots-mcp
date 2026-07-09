@@ -9,6 +9,7 @@
   "main": "server.mjs",
   "scripts": {
     "start": "node server.mjs",
+    "test": "node --test",
     "version": "node scripts/sync-version.mjs && git add server.json"
   },
   "keywords": [

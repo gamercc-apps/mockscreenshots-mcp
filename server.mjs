@@ -16,6 +16,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import { fileURLToPath } from 'node:url';
 
 const SITE = 'https://mockscreenshots.com';
 
@@ -39,11 +40,17 @@ const DEVICES = [
 const b64urlEncode = (str) =>
   Buffer.from(str, 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-/** Build a deep link for a platform + compact share state. */
-function buildUrl(platform, state) {
+/** Build a deep link to the generator, pre-filled with the compact share state. */
+export function buildDeepLink(platform, state) {
   const slug = PLATFORMS[platform];
+  return `${SITE}${slug}?s=${b64urlEncode(JSON.stringify(state))}`;
+}
+
+/** Build a render-endpoint URL for the given platform + state. `scale=1` = low-res preview; omitted = full-res. */
+export function buildRenderUrl(platform, state, scale) {
   const s = b64urlEncode(JSON.stringify(state));
-  return `${SITE}${slug}?s=${s}`;
+  const q = `platform=${platform}&s=${s}` + (scale ? `&scale=${scale}` : '');
+  return `${SITE}/api/render?${q}`;
 }
 
 const server = new Server(
@@ -80,6 +87,7 @@ const TOOLS = [
         status: { type: 'string', description: 'Header status line, e.g. "online", "Active now", "typing…".' },
         device: { type: 'string', enum: DEVICES, description: 'Device frame. Defaults to iphone-16-pro.' },
         dark: { type: 'boolean', description: 'Dark mode. Defaults to false.' },
+        format: { type: 'string', enum: ['image', 'link'], description: 'Return an inline preview image (default) or just links.' },
       },
       required: ['platform', 'messages'],
     },
@@ -137,22 +145,40 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       })),
     };
 
-    const url = buildUrl(platform, state);
-    return {
-      content: [
-        {
-          type: 'text',
-          text:
-            `Fake ${platform} chat ready. Open this link to preview and download (watermarked, free):\n\n${url}\n\n` +
-            `Note: output is clearly fictional and watermarked. Do not present it as a real conversation — see ${SITE}/ethics.`,
-        },
-      ],
-    };
+    const deepLink = buildDeepLink(platform, state);
+    const fullUrl = buildRenderUrl(platform, state);          // full-res, download/share
+    const ethics = `Output is clearly fictional and watermarked — do not present it as real. See ${SITE}/ethics.`;
+
+    if (args.format === 'link') {
+      return { content: [{ type: 'text', text:
+        `Fake ${platform} chat ready.\nImage (download/share): ${fullUrl}\nEdit in the generator: ${deepLink}\n\n${ethics}` }] };
+    }
+
+    // Default: inline preview image + links. Preview is low-res (scale=1) to
+    // keep tokens down; fullUrl is retina.
+    try {
+      const previewUrl = buildRenderUrl(platform, state, 1);
+      const resp = await fetch(previewUrl);
+      if (!resp.ok) throw new Error(`render ${resp.status}`);
+      const buf = Buffer.from(await resp.arrayBuffer());
+      return { content: [
+        { type: 'image', mimeType: 'image/png', data: buf.toString('base64') },
+        { type: 'text', text:
+          `Fake ${platform} chat.\nFull-res (download/share): ${fullUrl}\nEdit: ${deepLink}\n\n${ethics}` },
+      ] };
+    } catch (e) {
+      // Fidelity over failure: fall back to links if the render service is down.
+      return { content: [{ type: 'text', text:
+        `Fake ${platform} chat ready (preview unavailable: ${e.message}).\nImage: ${fullUrl}\nEdit: ${deepLink}\n\n${ethics}` }] };
+    }
   }
 
   return { isError: true, content: [{ type: 'text', text: `Unknown tool "${name}".` }] };
 });
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
-console.error('mockscreenshots-mcp running on stdio');
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isMain) {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error('mockscreenshots-mcp running on stdio');
+}
