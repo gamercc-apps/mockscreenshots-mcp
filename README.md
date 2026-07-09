@@ -82,7 +82,9 @@ distribution channel
 
 ## How it works
 
-The server never renders images. It encodes the conversation into a compact,
-URL-safe `?s=` parameter that the generator reads on load (`src/lib/share.ts`). This
-keeps the server tiny and dependency-light, and keeps the human in the loop to preview,
-tweak and export.
+The MCP server itself stays tiny and stateless: it builds URLs and encodes the
+conversation into a compact, URL-safe `?s=` parameter (also read by the generator on
+load, `src/lib/share.ts`), then fetches a preview from the site's `/api/render`
+endpoint, which does the actual (always-watermarked) server-side rendering via
+Cloudflare Browser Rendering. This keeps the server dependency-light and keeps the
+human in the loop to preview, tweak and export.

@@ -4,8 +4,9 @@
  *
  * Exposes tools that let an AI agent compose a fake chat/screenshot and get back
  * a deep link to the matching Mock Screenshots generator, pre-filled and ready to
- * export. Honest by design: it does not claim to render an image server-side —
- * it returns a URL the user opens to preview, tweak and download (watermarked).
+ * export. Honest by design: the tool returns a server-rendered, watermarked PNG
+ * (inline preview + hosted URL from the site's /api/render endpoint) alongside a
+ * deep link the user can open to preview, tweak and download.
  *
  * Distribution: publish to registry.modelcontextprotocol.io, then mcp.so,
  * Smithery, PulseMCP, Glama, awesome-mcp-servers (ACTION-PLAN §4).
@@ -17,6 +18,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { fileURLToPath } from 'node:url';
+import { realpathSync } from 'node:fs';
 
 const SITE = 'https://mockscreenshots.com';
 
@@ -158,7 +160,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     // keep tokens down; fullUrl is retina.
     try {
       const previewUrl = buildRenderUrl(platform, state, 1);
-      const resp = await fetch(previewUrl);
+      const resp = await fetch(previewUrl, { signal: AbortSignal.timeout(30000) });
       if (!resp.ok) throw new Error(`render ${resp.status}`);
       const buf = Buffer.from(await resp.arrayBuffer());
       return { content: [
@@ -176,7 +178,8 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
   return { isError: true, content: [{ type: 'text', text: `Unknown tool "${name}".` }] };
 });
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+const isMain = process.argv[1] &&
+  realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
 if (isMain) {
   const transport = new StdioServerTransport();
   await server.connect(transport);
