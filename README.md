@@ -12,7 +12,7 @@ mockups and fiction. It is **not** for deception — see
 
 | Tool | What it does |
 |------|--------------|
-| `generate_fake_chat` | Compose a conversation (platform, messages, contact, status, device, dark) → returns a deep link to the generator, pre-filled. |
+| `generate_fake_chat` | Compose a conversation (platform, messages, contact, status, device, dark) → returns a rendered, watermarked PNG (inline preview + hosted URL for download/share) plus a deep link to the generator. Supports `format: "image"` (default, returns preview+URL) or `"link"` (text-only URLs). |
 | `list_platforms` | Lists supported chat apps and their generator URLs. |
 | `list_devices` | Lists the iPhone/Android device frames. |
 
@@ -25,6 +25,7 @@ mockups and fiction. It is **not** for deception — see
   "status": "typing…",               // header status line (optional)
   "device": "galaxy-s24",            // see list_devices (default iphone-16-pro)
   "dark": true,                      // dark mode (optional)
+  "format": "image",                 // "image" (default) | "link" — see Screenshots section
   "messages": [
     { "text": "you home?", "sender": "them", "time": "19:01" },
     { "text": "5 mins!", "sender": "me", "time": "19:02", "ticks": "read" }
@@ -32,9 +33,20 @@ mockups and fiction. It is **not** for deception — see
 }
 ```
 
-Returns a URL like
+### Screenshots
+
+Returns a **rendered, watermarked screenshot** server-side via the site's `GET /api/render` endpoint (Cloudflare Browser Rendering). Default output (`format: "image"`) includes:
+- **Inline preview image** (scaled, watermarked — displays immediately)
+- **Hosted full-res PNG URL** (download / share in DMs, always watermarked and clearly fictional)
+- **Deep edit link** to the generator, pre-filled with your conversation
+
+Alternately, use `format: "link"` for text-only output (just the URLs, no image preview).
+
+**Always watermarked:** Screenshots include a prominent "FAKE" watermark and cannot be disabled. This ensures they remain clearly fictional and non-deceptive for parody, education, design mockups and fiction — see [the ethics policy](https://mockscreenshots.com/ethics).
+
+Also returns a URL like
 `https://mockscreenshots.com/fake-whatsapp-chat-generator?s=<state>` that opens the
-generator with the conversation loaded.
+generator with the conversation loaded (for preview/tweaking before final export).
 
 ## Run
 
