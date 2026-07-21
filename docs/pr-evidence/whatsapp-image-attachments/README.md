@@ -63,6 +63,9 @@ This does **not** erase the release-review result: two earlier real `whatsapp-gr
 - The optional public `messages[].image` maps to merged `m[].im`; text-only behavior and content types remain unchanged.
 - Every successful format, preview fallback, and validation error includes the mandatory watermarked/fictional ethics warning. There is no watermark bypass.
 - Fixtures contain no credentials, tokens, private user data, real identities, or real uploads.
+- Attachment bytes are embedded as data URLs inside the base64url JSON state carried by both `GET /api/render` and generator edit URLs. Base64url is not encryption. Use only non-sensitive synthetic or already-public attachments, and treat attachment-bearing URLs as sensitive because MCP transcripts, client logs, browser history, proxy/CDN request logs, analytics/referrers, and cache keys may retain them.
+- The MCP preview fetch requests `cache: "no-store"` and `referrerPolicy: "no-referrer"` as defense in depth. This does not control the deployed endpoint, intermediaries, or user-opened URLs, so GET URL logging/caching remains a residual architectural risk under the current deployed contract.
+- The MCP adds no attachment or URL logging. Rollback is to revert the attachment commit or omit `messages[].image`; text-only behavior remains unchanged. An opaque expiring state endpoint would need a separate site/API change and is out of scope for this compatibility PR.
 
 Verification commands:
 

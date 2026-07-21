@@ -50,6 +50,26 @@ rejected. Alternative text is trimmed to 160 characters and defaults to `Attache
 The merged site endpoint limits the complete base64url state to 8,000 characters, so a
 smaller attachment may still be required after conversation metadata is included.
 
+#### Attachment privacy and URL handling
+
+**Use only non-sensitive synthetic or already-public attachments.** Attachment bytes are
+stored as a data URL inside the base64url-encoded JSON state in both the hosted
+`GET /api/render?...&s=<state>` URL and the generator edit `?s=<state>` URL. Base64url is
+encoding, not encryption: anyone or any system with either URL can recover the attachment.
+
+Treat every attachment-bearing render or edit URL as sensitive. It may be retained in MCP
+transcripts, client logs, browser history, proxy/CDN request logs, analytics/referrers, and
+cache keys. Do not use credentials, private user data, confidential screenshots, or private
+uploads as fixtures. The MCP's own preview request uses `cache: "no-store"` and
+`referrerPolicy: "no-referrer"` as defense in depth, but those client-side request settings
+cannot guarantee that the deployed endpoint, intermediaries, or a user-opened URL will not
+log or cache the full GET URL. No attachment or URL logging is added by this MCP server.
+
+This residual exposure is inherent in the currently deployed URL-state contract. Roll back
+attachment support by reverting the attachment commit, or avoid `messages[].image`; existing
+text-only requests remain compatible and unchanged. A future opaque, expiring server-side
+state token would require a separate site/API contract and is intentionally not invented here.
+
 ### Screenshots
 
 Returns a **rendered, watermarked screenshot** server-side via the site's `GET /api/render` endpoint (Cloudflare Browser Rendering). Default output (`format: "image"`) includes:
@@ -109,4 +129,4 @@ human in the loop to preview, tweak and export.
 The server never fetches a caller-supplied attachment URL. Preview responses are accepted
 only when they are bounded PNG data from the fixed Mock Screenshots endpoint; endpoint
 errors and timeouts safely fall back to the hosted image/edit links while retaining the
-watermark and ethics warning.
+watermark, ethics warning, and (when an attachment is present) attachment privacy warning.

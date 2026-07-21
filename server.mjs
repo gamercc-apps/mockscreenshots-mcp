@@ -54,6 +54,9 @@ const b64urlEncode = (str) =>
 const ethicsWarning = () =>
   `Output is clearly fictional and watermarked — do not present it as real. See ${SITE}/ethics.`;
 
+const attachmentPrivacyWarning = () =>
+  'Privacy: Attachment bytes are embedded in the hosted image and edit URLs. Use only non-sensitive synthetic or public attachments, and treat every attachment URL as sensitive because it may be retained in MCP transcripts, client/browser history, proxy/CDN logs, analytics/referrers, and cache keys.';
+
 const errorResult = (message) => ({
   isError: true,
   content: [{ type: 'text', text: `${message}\n\n${ethicsWarning()}` }],
@@ -133,7 +136,7 @@ const TOOLS = [
               service: { type: 'string', enum: ['imessage', 'sms'], description: 'iMessage blue vs SMS green.' },
               image: {
                 type: 'object',
-                description: 'Optional static image attachment for WhatsApp chats.',
+                description: 'Optional static image attachment for WhatsApp chats. Use only non-sensitive synthetic or public data. Attachment bytes are embedded in returned URLs; treat every attachment URL as sensitive.',
                 properties: {
                   data: { type: 'string', description: 'Base64-encoded PNG, JPEG, or WebP bytes.' },
                   mimeType: { type: 'string', enum: ['image/png', 'image/jpeg', 'image/webp'] },
@@ -234,17 +237,22 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const deepLink = buildDeepLink(platform, state);
     const fullUrl = buildRenderUrl(platform, state);          // full-res, download/share
     const ethics = ethicsWarning();
+    const privacy = normalizedImages.some(Boolean) ? `\n\n${attachmentPrivacyWarning()}` : '';
 
     if (args.format === 'link') {
       return { content: [{ type: 'text', text:
-        `Fake ${platform} chat ready.\nImage (download/share): ${fullUrl}\nEdit in the generator: ${deepLink}\n\n${ethics}` }] };
+        `Fake ${platform} chat ready.\nImage (download/share): ${fullUrl}\nEdit in the generator: ${deepLink}\n\n${ethics}${privacy}` }] };
     }
 
     // Default: inline preview image + links. Preview is low-res (scale=1) to
     // keep tokens down; fullUrl is retina.
     try {
       const previewUrl = buildRenderUrl(platform, state, 1);
-      const resp = await fetch(previewUrl, { signal: AbortSignal.timeout(RENDER_TIMEOUT_MS) });
+      const resp = await fetch(previewUrl, {
+        signal: AbortSignal.timeout(RENDER_TIMEOUT_MS),
+        cache: 'no-store',
+        referrerPolicy: 'no-referrer',
+      });
       if (!resp.ok) throw new Error(`render ${resp.status}`);
       if (resp.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase() !== 'image/png') {
         throw new Error('render returned an invalid content type');
@@ -261,12 +269,12 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       return { content: [
         { type: 'image', mimeType: 'image/png', data: buf.toString('base64') },
         { type: 'text', text:
-          `Fake ${platform} chat.\nFull-res (download/share): ${fullUrl}\nEdit: ${deepLink}\n\n${ethics}` },
+          `Fake ${platform} chat.\nFull-res (download/share): ${fullUrl}\nEdit: ${deepLink}\n\n${ethics}${privacy}` },
       ] };
     } catch (e) {
       // Fidelity over failure: fall back to links if the render service is down.
       return { content: [{ type: 'text', text:
-        `Fake ${platform} chat ready (preview unavailable: ${e.message}).\nImage: ${fullUrl}\nEdit: ${deepLink}\n\n${ethics}` }] };
+        `Fake ${platform} chat ready (preview unavailable: ${e.message}).\nImage: ${fullUrl}\nEdit: ${deepLink}\n\n${ethics}${privacy}` }] };
     }
   }
 

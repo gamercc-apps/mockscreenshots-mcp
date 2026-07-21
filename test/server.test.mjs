@@ -61,6 +61,9 @@ test('stdio MCP preserves incoming and outgoing mixed text plus PNG images for W
     const tools = await client.listTools();
     const generate = tools.tools.find((tool) => tool.name === 'generate_fake_chat');
     assert.ok(generate.inputSchema.properties.messages.items.properties.image);
+    const imageSchema = generate.inputSchema.properties.messages.items.properties.image;
+    assert.match(imageSchema.description, /non-sensitive.*synthetic.*public/i);
+    assert.match(imageSchema.description, /URL.*sensitive/i);
 
     for (const platform of ['whatsapp', 'whatsapp-group']) {
       const result = await client.callTool({
@@ -88,6 +91,9 @@ test('stdio MCP preserves incoming and outgoing mixed text plus PNG images for W
       const text = result.content[0].text;
       assert.match(text, /watermarked/i);
       assert.match(text, /do not present it as real/i);
+      assert.match(text, /attachment bytes.*URL/i);
+      assert.match(text, /non-sensitive.*synthetic.*public/i);
+      assert.match(text, /URL.*sensitive/i);
       const editUrl = text.match(/Edit in the generator: (\S+)/)?.[1];
       const decoded = decodeStateFromUrl(editUrl);
       assert.deepEqual(decoded.m.map((message) => message.im), [
@@ -122,6 +128,8 @@ test('tool schema allows image-only WhatsApp messages while preserving text-only
 test('stdio MCP returns inline PNG plus deterministic hosted and edit URLs for an image message', async () => {
   await withRenderServer((req, res) => {
     assert.match(req.url, /^\/api\/render\?platform=whatsapp&s=.*&scale=1$/);
+    assert.match(req.headers['cache-control'] ?? '', /no-cache/i);
+    assert.equal(req.headers.referer, undefined);
     res.writeHead(200, { 'content-type': 'image/png' });
     res.end(Buffer.from(PNG_BASE64, 'base64'));
   }, async (site) => {
@@ -139,6 +147,8 @@ test('stdio MCP returns inline PNG plus deterministic hosted and edit URLs for a
         assert.match(result.content[1].text, new RegExp(`Full-res \\(download/share\\): ${site.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\/api\\/render\\?`));
         assert.match(result.content[1].text, new RegExp(`Edit: ${site.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\/fake-whatsapp-chat-generator\\?s=`));
         assert.match(result.content[1].text, /watermarked/i);
+        assert.match(result.content[1].text, /attachment bytes.*URL/i);
+        assert.match(result.content[1].text, /URL.*sensitive/i);
       }
       assert.equal(first.content[1].text, second.content[1].text);
     }, { MOCKSCREENSHOTS_SITE: site });
@@ -173,6 +183,8 @@ test('stdio MCP gracefully falls back to watermarked links on render endpoint fa
         assert.match(result.content[0].text, /Image: http:\/\/127\.0\.0\.1:/, mode);
         assert.match(result.content[0].text, /Edit: http:\/\/127\.0\.0\.1:/, mode);
         assert.match(result.content[0].text, /watermarked/i, mode);
+        assert.match(result.content[0].text, /attachment bytes.*URL/i, mode);
+        assert.match(result.content[0].text, /URL.*sensitive/i, mode);
         if (mode === 'failure') assert.match(result.content[0].text, /render 503/i);
         if (mode === 'timeout') assert.match(result.content[0].text, /timed out|timeout|aborted/i);
       }, { MOCKSCREENSHOTS_SITE: site, MOCKSCREENSHOTS_RENDER_TIMEOUT_MS: mode === 'failure' ? '500' : '20' });
