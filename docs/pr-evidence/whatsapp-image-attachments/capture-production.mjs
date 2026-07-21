@@ -2,6 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const evidenceDir = fileURLToPath(new URL('./', import.meta.url));
@@ -12,7 +13,46 @@ const imageData = imageBytes.toString('base64');
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 if (sha256(imageBytes) !== fixture.attachment.sha256) throw new Error('synthetic fixture checksum mismatch');
 
-const attemptsPerPlatform = 2;
+const attemptsPerPlatform = 4;
+const reviewedSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: fileURLToPath(new URL('../../../', import.meta.url)), encoding: 'utf8' }).trim();
+const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const summarizeUrl = (url) => {
+  const parsed = new URL(url);
+  return `${parsed.origin}${parsed.pathname}?platform=${parsed.searchParams.get('platform')}&s=<redacted-deterministic-synthetic-state>`;
+};
+const probeFullResolution = async (textValue) => {
+  const match = textValue.match(/(?:Full-res \(download\/share\)|Image): (https:\/\/mockscreenshots\.com\/api\/render\?[^\n]+)/);
+  if (!match) return { present: false };
+  const url = match[1];
+  const startedAt = Date.now();
+  try {
+    const response = await fetch(url, { cache: 'no-store', referrerPolicy: 'no-referrer' });
+    const bytes = Buffer.from(await response.arrayBuffer());
+    return {
+      present: true,
+      url: summarizeUrl(url),
+      durationMs: Date.now() - startedAt,
+      status: response.status,
+      mimeType: response.headers.get('content-type'),
+      bytes: bytes.length,
+      sha256: sha256(bytes),
+      pngSignature: bytes.subarray(0, pngSignature.length).equals(pngSignature),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      present: true,
+      url: summarizeUrl(url),
+      durationMs: Date.now() - startedAt,
+      status: null,
+      mimeType: null,
+      bytes: null,
+      sha256: null,
+      pngSignature: false,
+      error: error.message,
+    };
+  }
+};
 const transport = new StdioClientTransport({ command: process.execPath, args: [serverPath], stderr: 'pipe' });
 const client = new Client({ name: 'mcp-pr-evidence-client', version: '1.0.0' });
 const attempts = [];
@@ -41,6 +81,7 @@ try {
       const hasHostedAndEditUrls = /Full-res \(download\/share\): https:\/\/mockscreenshots\.com\/api\/render\?/.test(textValue)
         && /Edit: https:\/\/mockscreenshots\.com\/fake-whatsapp/.test(textValue);
       const ethicsAndWatermarkText = /watermarked/.test(textValue) && /do not present it as real/.test(textValue);
+      const fullResolution = await probeFullResolution(textValue);
       let preview = null;
       if (image) {
         const previewBytes = Buffer.from(image.data, 'base64');
@@ -63,6 +104,7 @@ try {
         preview,
         hasHostedAndEditUrls,
         ethicsAndWatermarkText,
+        fullResolution,
         text: textValue,
       });
     }
@@ -73,7 +115,7 @@ try {
     attemptsPerPlatform,
     transport: 'Client + StdioClientTransport',
     productionSite: 'https://mockscreenshots.com',
-    reviewedSha: '02d6b8b5ef6d895486701aa7729af8a7bf7a13b8',
+    reviewedSha,
     serverVersion: client.getServerVersion(),
     toolNames: tools.tools.map((tool) => tool.name),
     attachment: { path: 'synthetic-launch-board.png', bytes: imageBytes.length, sha256: sha256(imageBytes) },
@@ -85,6 +127,9 @@ try {
       protocolErrors: attempts.filter((entry) => entry.outcome === 'protocol-error').length,
       hostedAndEditUrlsOnEveryAttempt: attempts.every((entry) => entry.hasHostedAndEditUrls),
       ethicsAndWatermarkTextOnEveryAttempt: attempts.every((entry) => entry.ethicsAndWatermarkText),
+      fullResolutionHttp200PngOnEveryAttempt: attempts.every((entry) => entry.fullResolution.status === 200
+        && entry.fullResolution.mimeType?.startsWith('image/png')
+        && entry.fullResolution.pngSignature),
     },
     historicalObservation: {
       source: 'release-review reruns reported in Kanban task t_ad00badf',
