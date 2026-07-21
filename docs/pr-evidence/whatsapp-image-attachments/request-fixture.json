@@ -8,7 +8,7 @@
     "stateLimitCharacters": 8000,
     "imageLimitBytes": 2097152,
     "altLimitCharacters": 160,
-    "watermark": "mandatory; endpoint always invokes rendering with watermarked=true"
+    "watermark": "current MCP benchmark behavior invokes rendering with watermarked=true; repeated watermarking is an observed deployed output, not an owner-policy release gate, and watermark-free initial output remains allowed"
   },
   "competitors": [
     {
