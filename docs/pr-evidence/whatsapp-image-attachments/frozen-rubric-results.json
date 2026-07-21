@@ -1,0 +1,83 @@
+{
+  "rubricVersion": "1.0-frozen",
+  "sourceReportSha256": "0dfc9a906247179f893b64bd979dba798083f761c83ac7c2700cbc39cfb71701",
+  "originalMeasurementAtUtc": "2026-07-21T02:52:05.610Z",
+  "postDeploymentEvidenceAtUtc": "2026-07-21T08:12:17.217Z",
+  "reviewedSourceSha": "1ed955991b717b4bc30bf19364c01454708b2e5f",
+  "weightedScore": 83.9,
+  "weightedPassThreshold": 80,
+  "passed": false,
+  "passInterpretation": "The weighted aggregate exceeded 80, but the frozen rubric did not pass because robustness, output/export, and MCP-parity hard thresholds failed in the original cold-state review. Those historical failures are retained and are not relabeled as passed.",
+  "blockingDependency": null,
+  "currentDependencyStatus": "devyeshtandon/mock-screenshots PR #4 was squash-merged and deployed under the owner's explicit Cloudflare/cold-render reliability waiver. The former open-PR/deployment dependency is resolved by deployment plus waiver, not by retroactive passage of the original hard reliability threshold.",
+  "currentDecision": "No automatic release decision. PR #1 remains open/unmerged/unpublished and still requires human approval; any later npm/MCP Registry release requires a coordinated version bump and tag.",
+  "categories": {
+    "taskSuccess": {
+      "score": 92,
+      "weight": 25,
+      "threshold": 90,
+      "evidence": "Actual MCP Client + StdioClientTransport supports the frozen 1:1/group attachment flows. Fresh post-deployment source-SHA evidence produced 8/8 inline image+text successes with hosted/edit URLs and no errors."
+    },
+    "visualFidelity": {
+      "score": 90,
+      "weight": 20,
+      "threshold": 80,
+      "evidence": "Corrected competitor evidence contains the same frozen two-message/two-attachment input. Current deployed 1:1/group previews preserve the messages, times, attachments, and rendering layout. Repeated mockscreenshots.com watermarking was observed, but owner policy allows watermark-free initial output, so watermark presence is not a mandatory gate."
+    },
+    "workflowUsability": {
+      "score": 90,
+      "weight": 15,
+      "evidence": "One optional bounded image per message; image-only and mixed messages supported; existing text-only request remains unchanged."
+    },
+    "speed": {
+      "score": 92,
+      "weight": 10,
+      "evidence": "Fresh post-deployment MCP attempts completed in 822, 133, 86, 83, 93, 82, 95, and 76 ms; direct full-resolution probes completed in 406, 90, 44, 46, 51, 45, 49, and 41 ms. Historical cold acquisition instability is preserved separately."
+    },
+    "robustness": {
+      "score": 60,
+      "weight": 10,
+      "threshold": 80,
+      "evidence": "Historical frozen result: input/error tests passed and fallback was safe, but independent cold verification observed HTTP 500 on 100/100 full-resolution probes per WhatsApp mode. The owner waived this hard threshold for site PR #4 deployment. Current post-deployment observation: 8/8 inline calls and 8/8 direct full-resolution probes succeeded; this does not retroactively change the frozen score or mark the original threshold passed."
+    },
+    "accessibility": {
+      "score": 75,
+      "weight": 8,
+      "evidence": "Alt text is supported and bounded. Historical independent review found 390 px mobile overflow to 472 px; the site remediation was merged/deployed under the owner's explicit waiver decision."
+    },
+    "outputExport": {
+      "score": 60,
+      "weight": 7,
+      "threshold": 90,
+      "evidence": "Historical frozen result: advertised uncached hosted URLs failed cold production probes. Current post-deployment observation: all eight hosted URLs returned HTTP 200 image/png with valid signatures (403,323 bytes 1:1; 411,143 bytes group). Original threshold failure is retained; deployment proceeded under waiver."
+    },
+    "mcpParity": {
+      "score": 80,
+      "weight": 5,
+      "threshold": 90,
+      "evidence": "Historical frozen result was blocked on stable production hosted output. Current post-deployment Client + StdioClientTransport evidence has 8/8 1:1/group inline image+text successes, hosted/edit URLs on every attempt, and no protocol errors. The former site-PR dependency is no longer current, but the original score is frozen."
+    }
+  },
+  "commands": {
+    "tests": "npm test (13/13 passed)",
+    "productionProtocol": "node docs/pr-evidence/whatsapp-image-attachments/capture-production.mjs (post-deployment: 8/8 inline image+text and 8/8 HTTP 200 PNG hosted probes; historical cold failures preserved)",
+    "checksums": "sha256sum -c docs/pr-evidence/whatsapp-image-attachments/SHA256SUMS",
+    "packageDryRun": "npm pack --dry-run --json",
+    "diffCheck": "git diff --check"
+  },
+  "protocolDefinitions": {
+    "inlineImageAndTextSuccess": "MCP content includes image and text; text includes hosted/edit URLs and current ethics/privacy warnings.",
+    "textLinkFallback": "MCP content includes text only because the production preview render failed; hosted/edit URLs and warnings remain available. This is graceful degradation, not hosted-output success."
+  },
+  "historicalObservation": "Earlier cold-state failures and two group stdio fallbacks remain release-review evidence. They were not erased by warm/post-deployment recovery and were waived, not passed, for the site deployment.",
+  "postDeploymentObservation": "Fresh source-SHA evidence at 2026-07-21T08:12:17.217Z recorded 8/8 inline image+text successes and 8/8 HTTP 200 PNG full-resolution probes. Independent review at 2026-07-21T08:05–08:07Z separately recorded 24/24 inline successes and 4/4 HTTP 200 PNG probes.",
+  "packageStatus": {
+    "packageJson": "0.1.6",
+    "packageLock": "0.1.6",
+    "serverJson": "0.1.6",
+    "handshake": "0.1.6",
+    "npmLatest": "0.1.6",
+    "mergePublishes": false,
+    "releaseRequirement": "Explicit human approval plus coordinated package/lock/server version bump and tag before any new npm or MCP Registry release."
+  }
+}

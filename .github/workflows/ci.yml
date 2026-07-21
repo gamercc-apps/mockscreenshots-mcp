@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18, 22]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies reproducibly
+        run: npm ci
+
+      - name: Check changed lines for whitespace errors
+        env:
+          DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: git diff --check "$DIFF_BASE" "$GITHUB_SHA"
+
+      - name: Run tests
+        run: npm test
+
+      - name: Ensure tests leave tracked files unchanged
+        run: git diff --exit-code
+
+      - name: Verify package contents
+        shell: bash
+        run: |
+          npm pack --dry-run --json > "$RUNNER_TEMP/npm-pack.json"
+          node - "$RUNNER_TEMP/npm-pack.json" <<'NODE'
+          const fs = require('node:fs');
+          const [pack] = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          const actual = pack.files.map(({ path }) => path).sort();
+          const expected = [
+            'LICENSE',
+            'README.md',
+            'package.json',
+            'server.json',
+            'server.mjs',
+          ].sort();
+          if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+            console.error('Unexpected npm package contents.');
+            console.error({ expected, actual });
+            process.exit(1);
+          }
+          console.log(`Verified ${pack.filename}: ${actual.join(', ')}`);
+          NODE

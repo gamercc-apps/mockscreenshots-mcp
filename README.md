@@ -27,11 +27,52 @@ mockups and fiction. It is **not** for deception — see
   "dark": true,                      // dark mode (optional)
   "format": "image",                 // "image" (default) | "link" — see Screenshots section
   "messages": [
-    { "text": "you home?", "sender": "them", "time": "19:01" },
+    {
+      "text": "you home?",
+      "sender": "them",
+      "time": "19:01",
+      "image": {
+        "data": "<base64 PNG, JPEG, or WebP bytes>",
+        "mimeType": "image/png",
+        "alt": "A synthetic design mockup"
+      }
+    },
     { "text": "5 mins!", "sender": "me", "time": "19:02", "ticks": "read" }
   ]
 }
 ```
+
+`messages[].image` is optional and supported only for `whatsapp` and
+`whatsapp-group`, so existing text-only requests remain unchanged. Image-only messages
+are also supported. Attachments must be self-contained PNG, JPEG, or WebP bytes with a
+matching file signature; SVG, remote URLs, malformed base64, and files over 2 MB are
+rejected. Alternative text is limited to 160 characters, trimmed, and defaults to `Attached image`.
+The server also rejects more than 100 messages, message text over 4,000 characters, header
+metadata over 256 characters, and aggregate text/image source data over 6,000 bytes before
+it decodes attachments or builds duplicate JSON/base64url state. The merged site endpoint
+limits the complete base64url state to 8,000 characters, so the final encoded-state check
+remains authoritative and a smaller attachment may still be required after conversation
+metadata is included.
+
+#### Attachment privacy and URL handling
+
+**Use only non-sensitive synthetic or already-public attachments.** Attachment bytes are
+stored as a data URL inside the base64url-encoded JSON state in both the hosted
+`GET /api/render?...&s=<state>` URL and the generator edit `?s=<state>` URL. Base64url is
+encoding, not encryption: anyone or any system with either URL can recover the attachment.
+
+Treat every attachment-bearing render or edit URL as sensitive. It may be retained in MCP
+transcripts, client logs, browser history, proxy/CDN request logs, analytics/referrers, and
+cache keys. Do not use credentials, private user data, confidential screenshots, or private
+uploads as fixtures. The MCP's own preview request uses `cache: "no-store"` and
+`referrerPolicy: "no-referrer"` as defense in depth, but those client-side request settings
+cannot guarantee that the deployed endpoint, intermediaries, or a user-opened URL will not
+log or cache the full GET URL. No attachment or URL logging is added by this MCP server.
+
+This residual exposure is inherent in the currently deployed URL-state contract. Roll back
+attachment support by reverting the attachment commit, or avoid `messages[].image`; existing
+text-only requests remain compatible and unchanged. A future opaque, expiring server-side
+state token would require a separate site/API contract and is intentionally not invented here.
 
 ### Screenshots
 
@@ -88,3 +129,10 @@ load, `src/lib/share.ts`), then fetches a preview from the site's `/api/render`
 endpoint, which does the actual (always-watermarked) server-side rendering via
 Cloudflare Browser Rendering. This keeps the server dependency-light and keeps the
 human in the loop to preview, tweak and export.
+
+The server never fetches a caller-supplied attachment URL. Preview responses are accepted
+only when they are PNG data from the fixed Mock Screenshots endpoint. The response body is
+consumed with a 10 MB streaming cap and the reader is cancelled immediately when that cap
+is crossed, even when `Content-Length` is absent or inaccurate. Endpoint errors, invalid
+responses, and timeouts safely fall back to the hosted image/edit links while retaining the
+watermark, ethics warning, and (when an attachment is present) attachment privacy warning.
