@@ -46,9 +46,13 @@ mockups and fiction. It is **not** for deception — see
 `whatsapp-group`, so existing text-only requests remain unchanged. Image-only messages
 are also supported. Attachments must be self-contained PNG, JPEG, or WebP bytes with a
 matching file signature; SVG, remote URLs, malformed base64, and files over 2 MB are
-rejected. Alternative text is trimmed to 160 characters and defaults to `Attached image`.
-The merged site endpoint limits the complete base64url state to 8,000 characters, so a
-smaller attachment may still be required after conversation metadata is included.
+rejected. Alternative text is limited to 160 characters, trimmed, and defaults to `Attached image`.
+The server also rejects more than 100 messages, message text over 4,000 characters, header
+metadata over 256 characters, and aggregate text/image source data over 6,000 bytes before
+it decodes attachments or builds duplicate JSON/base64url state. The merged site endpoint
+limits the complete base64url state to 8,000 characters, so the final encoded-state check
+remains authoritative and a smaller attachment may still be required after conversation
+metadata is included.
 
 #### Attachment privacy and URL handling
 
@@ -127,6 +131,8 @@ Cloudflare Browser Rendering. This keeps the server dependency-light and keeps t
 human in the loop to preview, tweak and export.
 
 The server never fetches a caller-supplied attachment URL. Preview responses are accepted
-only when they are bounded PNG data from the fixed Mock Screenshots endpoint; endpoint
-errors and timeouts safely fall back to the hosted image/edit links while retaining the
+only when they are PNG data from the fixed Mock Screenshots endpoint. The response body is
+consumed with a 10 MB streaming cap and the reader is cancelled immediately when that cap
+is crossed, even when `Content-Length` is absent or inaccurate. Endpoint errors, invalid
+responses, and timeouts safely fall back to the hosted image/edit links while retaining the
 watermark, ethics warning, and (when an attachment is present) attachment privacy warning.

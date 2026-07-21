@@ -216,6 +216,127 @@ test('stdio MCP rejects non-PNG and oversized preview responses without returnin
   }
 });
 
+test('stdio MCP cancels an oversized chunked preview without Content-Length and safely falls back', async () => {
+  let responseClosed = false;
+  let chunksWritten = 0;
+  await withRenderServer((_req, res) => {
+    res.writeHead(200, { 'content-type': 'image/png' });
+    res.on('close', () => { responseClosed = true; });
+    const chunk = Buffer.alloc(1024 * 1024);
+    chunk.set(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+    const timer = setInterval(() => {
+      if (chunksWritten >= 20) {
+        clearInterval(timer);
+        res.end();
+        return;
+      }
+      chunksWritten += 1;
+      res.write(chunk);
+    }, 50);
+    res.on('error', () => clearInterval(timer));
+    res.on('close', () => clearInterval(timer));
+  }, async (site) => {
+    await withStdioClient(async (client) => {
+      const result = await client.callTool({
+        name: 'generate_fake_chat',
+        arguments: { platform: 'whatsapp', messages: [{ text: 'Safe', sender: 'them' }] },
+      });
+      assert.equal(result.content.length, 1);
+      assert.equal(result.content[0].type, 'text');
+      assert.match(result.content[0].text, /too large/i);
+      assert.match(result.content[0].text, /watermarked/i);
+    }, { MOCKSCREENSHOTS_SITE: site, MOCKSCREENSHOTS_RENDER_TIMEOUT_MS: '2000' });
+  });
+  assert.equal(responseClosed, true);
+  assert.ok(chunksWritten < 20, `expected reader cancellation before all chunks, wrote ${chunksWritten}`);
+});
+
+test('stdio MCP safely rejects a preview with a deceptive Content-Length', async () => {
+  await withRenderServer((_req, res) => {
+    const png = Buffer.from(PNG_BASE64, 'base64');
+    res.writeHead(200, { 'content-type': 'image/png', 'content-length': png.length + 1 });
+    res.end(png);
+  }, async (site) => {
+    await withStdioClient(async (client) => {
+      const result = await client.callTool({
+        name: 'generate_fake_chat',
+        arguments: { platform: 'whatsapp', messages: [{ text: 'Safe', sender: 'them' }] },
+      });
+      assert.equal(result.content.length, 1);
+      assert.equal(result.content[0].type, 'text');
+      assert.match(result.content[0].text, /preview unavailable/i);
+      assert.match(result.content[0].text, /terminated|aborted|body/i);
+      assert.match(result.content[0].text, /watermarked/i);
+    }, { MOCKSCREENSHOTS_SITE: site, MOCKSCREENSHOTS_RENDER_TIMEOUT_MS: '2000' });
+  });
+});
+
+test('stdio MCP applies cheap message, field, and aggregate attachment limits before render-state encoding', async () => {
+  await withStdioClient(async (client) => {
+    const tinyPng = { data: PNG_BASE64, mimeType: 'image/png' };
+    const cases = [
+      {
+        label: 'message count',
+        arguments: {
+          platform: 'whatsapp', format: 'link',
+          messages: Array.from({ length: 101 }, () => ({ text: 'x', sender: 'them' })),
+        },
+        expected: /100 messages or fewer/i,
+      },
+      {
+        label: 'oversized message text',
+        arguments: {
+          platform: 'whatsapp', format: 'link',
+          messages: [{ text: 'x'.repeat(4001), sender: 'them' }],
+        },
+        expected: /message text.*4000/i,
+      },
+      {
+        label: 'oversized contact metadata',
+        arguments: {
+          platform: 'whatsapp', format: 'link', contact: 'x'.repeat(257),
+          messages: [{ text: 'safe', sender: 'them' }],
+        },
+        expected: /contact.*256/i,
+      },
+      {
+        label: 'oversized image alternative text',
+        arguments: {
+          platform: 'whatsapp', format: 'link',
+          messages: [{ sender: 'them', image: { ...tinyPng, alt: 'x'.repeat(161) } }],
+        },
+        expected: /alternative text.*160/i,
+      },
+      {
+        label: 'aggregate message text',
+        arguments: {
+          platform: 'whatsapp', format: 'link',
+          messages: [
+            { text: 'x'.repeat(3500), sender: 'them' },
+            { text: 'y'.repeat(3500), sender: 'me' },
+          ],
+        },
+        expected: /combined message text.*too large/i,
+      },
+      {
+        label: 'aggregate attachments',
+        arguments: {
+          platform: 'whatsapp', format: 'link',
+          messages: Array.from({ length: 66 }, () => ({ sender: 'them', image: tinyPng })),
+        },
+        expected: /combined image data.*too large/i,
+      },
+    ];
+
+    for (const fixture of cases) {
+      const result = await client.callTool({ name: 'generate_fake_chat', arguments: fixture.arguments });
+      assert.equal(result.isError, true, fixture.label);
+      assert.match(result.content[0].text, fixture.expected, fixture.label);
+      assert.match(result.content[0].text, /watermarked/i, fixture.label);
+    }
+  });
+});
+
 test('stdio MCP rejects unsafe, unsupported, missing, oversized, and endpoint-incompatible image inputs with isError', async () => {
   await withStdioClient(async (client) => {
     const invalidCases = [
@@ -272,7 +393,7 @@ test('stdio MCP rejects unsafe, unsupported, missing, oversized, and endpoint-in
       {
         label: 'render-state URL limit',
         arguments: { platform: 'whatsapp', messages: [{ sender: 'them', image: { data: Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), Buffer.alloc(6000)]).toString('base64'), mimeType: 'image/png' } }], format: 'link' },
-        expected: /render state.*too large/i,
+        expected: /combined image data.*too large/i,
       },
     ];
 

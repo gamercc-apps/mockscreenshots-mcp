@@ -24,6 +24,15 @@ const SITE = process.env.MOCKSCREENSHOTS_SITE || 'https://mockscreenshots.com';
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const MAX_PREVIEW_BYTES = 10 * 1024 * 1024;
 const MAX_RENDER_STATE_LENGTH = 8000;
+const MAX_MESSAGES = 100;
+const MAX_MESSAGE_TEXT_LENGTH = 4000;
+const MAX_METADATA_LENGTH = 256;
+const MAX_TIME_LENGTH = 64;
+const MAX_ALT_LENGTH = 160;
+const MAX_ENUM_FIELD_LENGTH = 16;
+// A base64url string is at least 4/3 the size of its JSON input. Requests
+// beyond 6,000 source bytes cannot fit the deployed 8,000-character state.
+const MAX_AGGREGATE_SOURCE_BYTES = 6000;
 const configuredRenderTimeout = Number(process.env.MOCKSCREENSHOTS_RENDER_TIMEOUT_MS);
 const RENDER_TIMEOUT_MS = Number.isFinite(configuredRenderTimeout)
   ? Math.min(30000, Math.max(10, Math.round(configuredRenderTimeout)))
@@ -61,6 +70,36 @@ const errorResult = (message) => ({
   isError: true,
   content: [{ type: 'text', text: `${message}\n\n${ethicsWarning()}` }],
 });
+
+function boundedStringBytes(value, label, maxLength) {
+  if (value === undefined || value === null || value === '') return { bytes: 0 };
+  if (typeof value !== 'string') return { error: `${label} must be a string.` };
+  if (value.length > maxLength) return { error: `${label} must be ${maxLength} characters or fewer.` };
+  return { bytes: Buffer.byteLength(value, 'utf8') };
+}
+
+async function readBoundedPreview(resp) {
+  if (!resp.body) throw new Error('rendered preview is empty');
+  const reader = resp.body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_PREVIEW_BYTES) {
+        await reader.cancel('rendered preview is too large').catch(() => {});
+        throw new Error('rendered preview is too large');
+      }
+      chunks.push(Buffer.from(value));
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  if (total === 0) throw new Error('rendered preview is too large');
+  return Buffer.concat(chunks, total);
+}
 
 function validateImage(image, platform) {
   if (!image || typeof image !== 'object') return { error: 'Image data is required.' };
@@ -124,15 +163,16 @@ const TOOLS = [
         platform: { type: 'string', enum: Object.keys(PLATFORMS), description: 'Which chat app to mimic.' },
         messages: {
           type: 'array',
+          maxItems: MAX_MESSAGES,
           description: 'The conversation, in order.',
           items: {
             type: 'object',
             properties: {
-              text: { type: 'string' },
+              text: { type: 'string', maxLength: MAX_MESSAGE_TEXT_LENGTH },
               sender: { type: 'string', enum: ['me', 'them'], description: '"me" = the phone owner (right side).' },
-              time: { type: 'string', description: 'Optional timestamp, e.g. "20:14".' },
+              time: { type: 'string', maxLength: MAX_TIME_LENGTH, description: 'Optional timestamp, e.g. "20:14".' },
               ticks: { type: 'string', enum: ['sent', 'delivered', 'read'], description: 'WhatsApp/Telegram outgoing ticks.' },
-              author: { type: 'string', description: 'Sender name for group chats (incoming only).' },
+              author: { type: 'string', maxLength: MAX_METADATA_LENGTH, description: 'Sender name for group chats (incoming only).' },
               service: { type: 'string', enum: ['imessage', 'sms'], description: 'iMessage blue vs SMS green.' },
               image: {
                 type: 'object',
@@ -149,8 +189,8 @@ const TOOLS = [
             required: ['sender'],
           },
         },
-        contact: { type: 'string', description: 'Contact name, username or group name shown in the header.' },
-        status: { type: 'string', description: 'Header status line, e.g. "online", "Active now", "typing…".' },
+        contact: { type: 'string', maxLength: MAX_METADATA_LENGTH, description: 'Contact name, username or group name shown in the header.' },
+        status: { type: 'string', maxLength: MAX_METADATA_LENGTH, description: 'Header status line, e.g. "online", "Active now", "typing…".' },
         device: { type: 'string', enum: DEVICES, description: 'Device frame. Defaults to iphone-16-pro.' },
         dark: { type: 'boolean', description: 'Dark mode. Defaults to false.' },
         format: { type: 'string', enum: ['image', 'link'], description: 'Return an inline preview image (default) or just links.' },
@@ -190,8 +230,22 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     if (!Array.isArray(messages) || messages.length === 0) {
       return errorResult('Provide at least one message.');
     }
+    if (messages.length > MAX_MESSAGES) {
+      return errorResult(`Provide ${MAX_MESSAGES} messages or fewer.`);
+    }
     if (device && !DEVICES.includes(device)) {
       return errorResult(`Unknown device "${device}". Use list_devices.`);
+    }
+
+    let aggregateSourceBytes = 0;
+    let aggregateImageChars = 0;
+    for (const [value, label, maxLength] of [
+      [contact, 'Contact', MAX_METADATA_LENGTH],
+      [status, 'Status', MAX_METADATA_LENGTH],
+    ]) {
+      const checked = boundedStringBytes(value, label, maxLength);
+      if (checked.error) return errorResult(checked.error);
+      aggregateSourceBytes += checked.bytes;
     }
 
     const normalizedImages = [];
@@ -205,9 +259,41 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       if ((typeof message.text !== 'string' || message.text.length === 0) && !message.image) {
         return errorResult('Each message must include text or an image attachment.');
       }
+      for (const [value, label, maxLength] of [
+        [message.text, 'Message text', MAX_MESSAGE_TEXT_LENGTH],
+        [message.time, 'Message time', MAX_TIME_LENGTH],
+        [message.author, 'Message author', MAX_METADATA_LENGTH],
+        [message.ticks, 'Message ticks', MAX_ENUM_FIELD_LENGTH],
+        [message.service, 'Message service', MAX_ENUM_FIELD_LENGTH],
+      ]) {
+        const bounded = boundedStringBytes(value, label, maxLength);
+        if (bounded.error) return errorResult(bounded.error);
+        aggregateSourceBytes += bounded.bytes;
+      }
       if (!message.image) {
+        if (aggregateSourceBytes > MAX_AGGREGATE_SOURCE_BYTES) {
+          return errorResult('The combined message text and metadata are too large for the production endpoint.');
+        }
         normalizedImages.push(null);
         continue;
+      }
+      const boundedAlt = boundedStringBytes(message.image.alt, 'Image alternative text', MAX_ALT_LENGTH);
+      if (boundedAlt.error) return errorResult(boundedAlt.error);
+      aggregateSourceBytes += boundedAlt.bytes;
+      if (typeof message.image.data === 'string') {
+        const padding = message.image.data.endsWith('==') ? 2 : message.image.data.endsWith('=') ? 1 : 0;
+        const estimatedBytes = Math.floor(message.image.data.length * 3 / 4) - padding;
+        if (estimatedBytes > MAX_IMAGE_BYTES) {
+          return errorResult('The image must be 2 MB or smaller.');
+        }
+        aggregateImageChars += message.image.data.length;
+        aggregateSourceBytes += message.image.data.length;
+        if (aggregateImageChars > MAX_AGGREGATE_SOURCE_BYTES) {
+          return errorResult('The combined image data is too large for the production endpoint.');
+        }
+        if (aggregateSourceBytes > MAX_AGGREGATE_SOURCE_BYTES) {
+          return errorResult('The combined request data is too large for the production endpoint.');
+        }
       }
       const checked = validateImage(message.image, platform);
       if (checked.error) return errorResult(checked.error);
@@ -253,16 +339,25 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
         cache: 'no-store',
         referrerPolicy: 'no-referrer',
       });
-      if (!resp.ok) throw new Error(`render ${resp.status}`);
+      if (!resp.ok) {
+        await resp.body?.cancel().catch(() => {});
+        throw new Error(`render ${resp.status}`);
+      }
       if (resp.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase() !== 'image/png') {
+        await resp.body?.cancel().catch(() => {});
         throw new Error('render returned an invalid content type');
       }
-      const declaredLength = Number(resp.headers.get('content-length'));
-      if (Number.isFinite(declaredLength) && declaredLength > MAX_PREVIEW_BYTES) {
+      const contentLength = resp.headers.get('content-length');
+      if (contentLength !== null && !/^\d+$/.test(contentLength)) {
+        await resp.body?.cancel().catch(() => {});
+        throw new Error('render returned an invalid content length');
+      }
+      const declaredLength = contentLength === null ? null : Number(contentLength);
+      if (declaredLength !== null && declaredLength > MAX_PREVIEW_BYTES) {
+        await resp.body?.cancel().catch(() => {});
         throw new Error('rendered preview is too large');
       }
-      const buf = Buffer.from(await resp.arrayBuffer());
-      if (buf.length === 0 || buf.length > MAX_PREVIEW_BYTES) throw new Error('rendered preview is too large');
+      const buf = await readBoundedPreview(resp);
       if (!Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).equals(buf.subarray(0, 8))) {
         throw new Error('render returned invalid PNG data');
       }
