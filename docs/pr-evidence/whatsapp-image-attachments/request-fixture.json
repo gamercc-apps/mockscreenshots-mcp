@@ -14,7 +14,10 @@
     {
       "name": "FakeDetail WhatsApp Chat Generator",
       "url": "https://fakedetail.com/fake-whatsapp-chat-generator",
-      "sitePrEvidence": "devyeshtandon/mock-screenshots PR #3 docs/pr-evidence/whatsapp-image-attachments/competitor-fakedetail-before.png"
+      "evidence": "competitor-fakedetail-before.png",
+      "evidenceSha256": "e793550e10c6e68626ca6a0cff9166071bc3810e5afe5f2ca2d4b46d58f6aa3f",
+      "inputParity": "exactly the two frozen messages, times, and attachments; FakeDetail default message deleted and reaction set to none",
+      "displayVariance": "FakeDetail renders entered 09:41 and 09:42 values without a leading zero as 9:41 and 9:42"
     },
     {
       "name": "Zeoob WhatsApp Chat Generator",
@@ -49,6 +52,12 @@
   "attachment": {
     "provenance": "Deterministically generated benign four-colour 320x180 PNG copied from the merged site PR evidence; not a user upload",
     "sha256": "c6fb09303f1d8c66bba3cdeaff06fbba8ecabdbaf7a81d0eabb5356e799ffb05"
+  },
+  "competitorEvidenceParity": {
+    "messageCount": 2,
+    "defaultMessagePresent": false,
+    "reactionPresent": false,
+    "sameAttachmentOnBothMessages": true
   },
   "privacy": "Synthetic Jamie/Launch labels only; no credentials, tokens, private user data, real identities, or real uploads."
 }

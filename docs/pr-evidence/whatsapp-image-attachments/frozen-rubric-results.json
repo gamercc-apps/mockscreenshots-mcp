@@ -1,25 +1,68 @@
 {
-  "rubricVersion": "1.0",
-  "sourceReportSha256": "434945345b1192515a9264c18122c885e73d4a42e7689fc43d6a1f1acc77248d",
-  "measuredAtUtc": "2026-07-21T02:02:50.265Z",
-  "weightedScore": 95.75,
+  "rubricVersion": "1.1",
+  "sourceReportSha256": "471053b54c2f9b7010dd119efc4a988d01cd4cba259fbd9dc4b1eba26f34bfd5",
+  "measuredAtUtc": "2026-07-21T02:52:05.610Z",
+  "reviewedSha": "02d6b8b5ef6d895486701aa7729af8a7bf7a13b8",
+  "weightedScore": 94.75,
   "weightedPassThreshold": 80,
   "passed": true,
   "categories": {
-    "taskSuccess": { "score": 100, "weight": 20, "threshold": 90, "evidence": "Actual MCP Client + StdioClientTransport generated production 1:1 and group results with incoming/outgoing mixed text+image content." },
-    "visualFidelity": { "score": 90, "weight": 20, "threshold": 80, "evidence": "Committed production previews show both 320x180 synthetic attachments bounded in WhatsApp bubbles, both exact texts/times, and repeated mockscreenshots.com watermark without clipping." },
-    "workflowUsability": { "score": 95, "weight": 10, "evidence": "One optional image object per message; image-only and mixed messages supported; existing text-only request remains unchanged." },
-    "speed": { "score": 95, "weight": 10, "evidence": "Production stdio calls completed in 302 ms (cached 1:1) and 2915 ms (group cold render); full local suite completed in under 4 seconds." },
-    "robustness": { "score": 95, "weight": 15, "threshold": 80, "evidence": "Tests cover missing/malformed/spoofed/oversize/SVG/non-WhatsApp inputs, 8,000-character endpoint limit, failures, timeout, MIME/signature validation, and preview response bounds." },
-    "accessibility": { "score": 95, "weight": 10, "evidence": "Attachment alt text is accepted, trimmed, capped at 160 characters, and defaults to Attached image, matching the site contract." },
-    "outputExport": { "score": 100, "weight": 10, "threshold": 90, "evidence": "Production returns inline PNG plus stable hosted full-resolution and edit URLs; both committed previews visibly retain the repeated mandatory watermark." },
-    "mcpParity": { "score": 100, "weight": 5, "threshold": 90, "evidence": "Public MCP schema emits the merged optional m[].im contract for WhatsApp and whatsapp-group; actual stdio handshake and both production render paths passed." }
+    "taskSuccess": {
+      "score": 100,
+      "weight": 20,
+      "threshold": 90,
+      "evidence": "Actual MCP Client + StdioClientTransport current rerun produced inline image+text on 4/4 calls: two whatsapp and two whatsapp-group attempts."
+    },
+    "visualFidelity": {
+      "score": 90,
+      "weight": 20,
+      "threshold": 80,
+      "evidence": "Competitor evidence was recaptured with exactly the frozen two-message/two-attachment input after deleting FakeDetail's default message and setting reaction to none. Both current production previews show the same two texts/times and attachments with repeated mockscreenshots.com watermarking. FakeDetail displays the entered 09:41/09:42 values as 9:41/9:42; this formatting variance is disclosed."
+    },
+    "workflowUsability": {
+      "score": 95,
+      "weight": 10,
+      "evidence": "One optional image object per message; image-only and mixed messages supported; existing text-only request remains unchanged."
+    },
+    "speed": {
+      "score": 95,
+      "weight": 10,
+      "evidence": "Current production attempts completed in 297 ms, 38 ms, 33 ms, and 33 ms; full local suite completed in under 4 seconds."
+    },
+    "robustness": {
+      "score": 95,
+      "weight": 15,
+      "threshold": 80,
+      "evidence": "Tests cover missing/malformed/spoofed/oversize/SVG/non-WhatsApp inputs, 8,000-character endpoint limit, failures, timeout, MIME/signature validation, and preview response bounds. Two earlier group HTTP 500s returned safe text-link fallback and remain disclosed."
+    },
+    "accessibility": {
+      "score": 95,
+      "weight": 10,
+      "evidence": "Attachment alt text is accepted, trimmed, capped at 160 characters, and defaults to Attached image, matching the site contract."
+    },
+    "outputExport": {
+      "score": 90,
+      "weight": 10,
+      "threshold": 90,
+      "evidence": "Current rerun returned inline PNG plus hosted/edit URLs on 4/4 attempts. Two earlier whatsapp-group HTTP 500 attempts returned text-only hosted/edit fallback, not inline success; fallback retained the ethics warning and is explicitly recorded."
+    },
+    "mcpParity": {
+      "score": 100,
+      "weight": 5,
+      "threshold": 90,
+      "evidence": "Public MCP schema emits the merged optional m[].im contract for WhatsApp and whatsapp-group; actual stdio handshake and current production render paths passed."
+    }
   },
   "commands": {
     "tests": "npm test (10/10 passed)",
-    "productionProtocol": "node docs/pr-evidence/whatsapp-image-attachments/capture-production.mjs (2/2 passed after one transient initial whatsapp-group render 500; immediate retry passed)",
-    "packageDryRun": "npm pack --dry-run (recorded in PR after final verification)",
-    "diffCheck": "git diff --check (passed before evidence finalization)"
+    "productionProtocol": "node docs/pr-evidence/whatsapp-image-attachments/capture-production.mjs (current: 4/4 inline image+text successes; historical release-review: 2/2 whatsapp-group HTTP 500 text-link fallbacks)",
+    "checksums": "sha256sum -c docs/pr-evidence/whatsapp-image-attachments/SHA256SUMS",
+    "packageDryRun": "npm pack --dry-run --json",
+    "diffCheck": "git diff --check"
   },
-  "transientObservation": "The first production group cold-render attempt returned HTTP 500 and correctly fell back to watermarked hosted/edit links; immediate rerun returned inline PNG+text. This is documented as an endpoint operational risk, not hidden."
+  "protocolDefinitions": {
+    "inlineImageAndTextSuccess": "MCP content includes image and text; text includes hosted/edit URLs and ethics warning.",
+    "textLinkFallback": "MCP content includes text only because the production preview render failed; hosted/edit URLs and ethics warning remain available. This is graceful degradation, not inline success."
+  },
+  "historicalObservation": "Release review reported two real whatsapp-group HTTP 500 responses at the reviewed SHA. Both correctly produced text-link fallback. The current four-attempt rerun recovered, but the prior failures are not hidden or relabeled."
 }
