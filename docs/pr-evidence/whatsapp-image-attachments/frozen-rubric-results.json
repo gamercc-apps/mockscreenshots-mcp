@@ -1,68 +1,69 @@
 {
-  "rubricVersion": "1.1",
-  "sourceReportSha256": "471053b54c2f9b7010dd119efc4a988d01cd4cba259fbd9dc4b1eba26f34bfd5",
+  "rubricVersion": "1.0-frozen",
+  "sourceReportSha256": "0dfc9a906247179f893b64bd979dba798083f761c83ac7c2700cbc39cfb71701",
   "measuredAtUtc": "2026-07-21T02:52:05.610Z",
-  "reviewedSha": "02d6b8b5ef6d895486701aa7729af8a7bf7a13b8",
-  "weightedScore": 94.75,
+  "reviewedSha": "e019361e6509f057cd443c522a27eea7cd9e78cc",
+  "weightedScore": 83.9,
   "weightedPassThreshold": 80,
-  "passed": true,
+  "passed": false,
+  "blockingDependency": "devyeshtandon/mock-screenshots PR #4 must be independently approved, deployed, and pass fresh uncached hosted-render reliability verification before the hard thresholds can be rerun.",
   "categories": {
     "taskSuccess": {
-      "score": 100,
-      "weight": 20,
+      "score": 92,
+      "weight": 25,
       "threshold": 90,
-      "evidence": "Actual MCP Client + StdioClientTransport current rerun produced inline image+text on 4/4 calls: two whatsapp and two whatsapp-group attempts."
+      "evidence": "Actual MCP Client + StdioClientTransport supports the frozen 1:1/group attachment flows and current warm reruns produced inline image+text."
     },
     "visualFidelity": {
       "score": 90,
       "weight": 20,
       "threshold": 80,
-      "evidence": "Competitor evidence was recaptured with exactly the frozen two-message/two-attachment input after deleting FakeDetail's default message and setting reaction to none. Both current production previews show the same two texts/times and attachments with repeated mockscreenshots.com watermarking. FakeDetail displays the entered 09:41/09:42 values as 9:41/9:42; this formatting variance is disclosed."
+      "evidence": "Corrected competitor evidence contains the same frozen two-message/two-attachment input; current MCP previews preserve the messages, times, attachments, and deployed rendering policy."
     },
     "workflowUsability": {
-      "score": 95,
-      "weight": 10,
-      "evidence": "One optional image object per message; image-only and mixed messages supported; existing text-only request remains unchanged."
+      "score": 90,
+      "weight": 15,
+      "evidence": "One optional bounded image per message; image-only and mixed messages supported; existing text-only request remains unchanged."
     },
     "speed": {
-      "score": 95,
+      "score": 92,
       "weight": 10,
-      "evidence": "Current production attempts completed in 297 ms, 38 ms, 33 ms, and 33 ms; full local suite completed in under 4 seconds."
+      "evidence": "Current warm production attempts completed in 297 ms, 38 ms, 33 ms, and 33 ms, but cold browser acquisition instability remains a release blocker."
     },
     "robustness": {
-      "score": 95,
-      "weight": 15,
+      "score": 60,
+      "weight": 10,
       "threshold": 80,
-      "evidence": "Tests cover missing/malformed/spoofed/oversize/SVG/non-WhatsApp inputs, 8,000-character endpoint limit, failures, timeout, MIME/signature validation, and preview response bounds. Two earlier group HTTP 500s returned safe text-link fallback and remain disclosed."
+      "evidence": "Input/error tests pass and MCP fallback is safe, but independent verification observed full-resolution production HTTP 500 responses on 100/100 probes per WhatsApp mode before cache warming. Site PR #4 addresses the diagnosed browser-session cause and remains unmerged."
     },
     "accessibility": {
-      "score": 95,
-      "weight": 10,
-      "evidence": "Attachment alt text is accepted, trimmed, capped at 160 characters, and defaults to Attached image, matching the site contract."
+      "score": 75,
+      "weight": 8,
+      "evidence": "Alt text is supported and bounded. Independent verification also found a 390 px mobile overflow to 472 px; site PR #4 addresses it and remains unmerged."
     },
     "outputExport": {
-      "score": 90,
-      "weight": 10,
+      "score": 60,
+      "weight": 7,
       "threshold": 90,
-      "evidence": "Current rerun returned inline PNG plus hosted/edit URLs on 4/4 attempts. Two earlier whatsapp-group HTTP 500 attempts returned text-only hosted/edit fallback, not inline success; fallback retained the ethics warning and is explicitly recorded."
+      "evidence": "Inline previews and fallback links work, but advertised uncached full-resolution hosted URLs failed independent production probes and have not yet passed post-deployment reliability verification."
     },
     "mcpParity": {
-      "score": 100,
+      "score": 80,
       "weight": 5,
       "threshold": 90,
-      "evidence": "Public MCP schema emits the merged optional m[].im contract for WhatsApp and whatsapp-group; actual stdio handshake and current production render paths passed."
+      "evidence": "The protocol/schema path is implemented and text-only compatibility passes; terminal parity is blocked on stable production hosted output and independent rerun after site PR #4 deployment."
     }
   },
   "commands": {
     "tests": "npm test (10/10 passed)",
-    "productionProtocol": "node docs/pr-evidence/whatsapp-image-attachments/capture-production.mjs (current: 4/4 inline image+text successes; historical release-review: 2/2 whatsapp-group HTTP 500 text-link fallbacks)",
+    "productionProtocol": "node docs/pr-evidence/whatsapp-image-attachments/capture-production.mjs (current warm rerun: 4/4 inline image+text; historical independent cold probes: blocking HTTP 500s)",
     "checksums": "sha256sum -c docs/pr-evidence/whatsapp-image-attachments/SHA256SUMS",
     "packageDryRun": "npm pack --dry-run --json",
     "diffCheck": "git diff --check"
   },
   "protocolDefinitions": {
-    "inlineImageAndTextSuccess": "MCP content includes image and text; text includes hosted/edit URLs and ethics warning.",
-    "textLinkFallback": "MCP content includes text only because the production preview render failed; hosted/edit URLs and ethics warning remain available. This is graceful degradation, not inline success."
+    "inlineImageAndTextSuccess": "MCP content includes image and text; text includes hosted/edit URLs and ethics/privacy warnings.",
+    "textLinkFallback": "MCP content includes text only because the production preview render failed; hosted/edit URLs and warnings remain available. This is graceful degradation, not hosted-output success."
   },
-  "historicalObservation": "Release review reported two real whatsapp-group HTTP 500 responses at the reviewed SHA. Both correctly produced text-link fallback. The current four-attempt rerun recovered, but the prior failures are not hidden or relabeled."
+  "historicalObservation": "Warm rerun recovery does not erase the independent cold-state failures. Release remains blocked until site PR #4 is deployed and identical uncached reliability probes pass."
 }

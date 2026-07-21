@@ -11,7 +11,7 @@ Captured 2026-07-21 UTC with synthetic data only. This directory proves public M
 - `stdio-production-result.json`: exact command, handshake, per-attempt timings/outcomes, hosted/edit result text, preview hashes, current summary, and the two earlier release-review HTTP 500 fallback observations.
 - `previews/whatsapp-watermarked.png`: current production 1:1 inline MCP preview.
 - `previews/whatsapp-group-watermarked.png`: current production group inline MCP preview.
-- `frozen-rubric-results.json`: frozen rubric v1.1 result, weighted 94.75/80 with all hard thresholds passed.
+- `frozen-rubric-results.json`: exact frozen rubric v1.0 weights, independently measured 83.9/100 aggregate with robustness, output/export, and MCP-parity hard thresholds still blocked pending site PR #4 deployment and cold-state re-verification.
 - `SHA256SUMS`: checksums for every committed evidence input, script, record, rubric, and image.
 
 ## Competitor input parity
