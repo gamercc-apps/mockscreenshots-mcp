@@ -18,9 +18,18 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { fileURLToPath } from 'node:url';
-import { realpathSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 
-const SITE = 'https://mockscreenshots.com';
+const SITE = process.env.MOCKSCREENSHOTS_SITE || 'https://mockscreenshots.com';
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const MAX_PREVIEW_BYTES = 10 * 1024 * 1024;
+const MAX_RENDER_STATE_LENGTH = 8000;
+const configuredRenderTimeout = Number(process.env.MOCKSCREENSHOTS_RENDER_TIMEOUT_MS);
+const RENDER_TIMEOUT_MS = Number.isFinite(configuredRenderTimeout)
+  ? Math.min(30000, Math.max(10, Math.round(configuredRenderTimeout)))
+  : 30000;
+const SAFE_IMAGE_MIMES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+const PACKAGE_VERSION = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version;
 
 // platform → generator slug. Keep in sync with src/config/tools.ts.
 const PLATFORMS = {
@@ -42,6 +51,47 @@ const DEVICES = [
 const b64urlEncode = (str) =>
   Buffer.from(str, 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
+const ethicsWarning = () =>
+  `Output is clearly fictional and watermarked — do not present it as real. See ${SITE}/ethics.`;
+
+const errorResult = (message) => ({
+  isError: true,
+  content: [{ type: 'text', text: `${message}\n\n${ethicsWarning()}` }],
+});
+
+function validateImage(image, platform) {
+  if (!image || typeof image !== 'object') return { error: 'Image data is required.' };
+  if (platform !== 'whatsapp' && platform !== 'whatsapp-group') {
+    return { error: 'Static image attachments are only supported for WhatsApp 1:1 and group chats.' };
+  }
+  if (typeof image.data !== 'string' || image.data.length === 0) return { error: 'Image data is required.' };
+  if (!SAFE_IMAGE_MIMES.has(image.mimeType)) return { error: 'Choose a PNG, JPEG, or WebP image. SVG is not supported.' };
+  if (image.data.length % 4 === 1 || !/^[A-Za-z0-9+/]*={0,2}$/.test(image.data)) {
+    return { error: 'Image data must be valid base64.' };
+  }
+  if (image.data.length > Math.ceil(MAX_IMAGE_BYTES / 3) * 4) {
+    return { error: 'The image must be 2 MB or smaller.' };
+  }
+  const bytes = Buffer.from(image.data, 'base64');
+  if (bytes.length === 0 || bytes.length > MAX_IMAGE_BYTES) return { error: 'The image must be 2 MB or smaller.' };
+  if (bytes.toString('base64').replace(/=+$/, '') !== image.data.replace(/=+$/, '')) {
+    return { error: 'Image data must be valid base64.' };
+  }
+  const signatureMatches = image.mimeType === 'image/png'
+    ? bytes.length >= 8 && Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).equals(bytes.subarray(0, 8))
+    : image.mimeType === 'image/jpeg'
+      ? bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+      : bytes.length >= 12 && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
+  if (!signatureMatches) return { error: `Image contents do not match ${image.mimeType}.` };
+  const alt = typeof image.alt === 'string' ? image.alt.trim().slice(0, 160) : '';
+  return {
+    value: {
+      src: `data:${image.mimeType};base64,${image.data}`,
+      alt: alt || 'Attached image',
+    },
+  };
+}
+
 /** Build a deep link to the generator, pre-filled with the compact share state. */
 export function buildDeepLink(platform, state) {
   const slug = PLATFORMS[platform];
@@ -56,7 +106,7 @@ export function buildRenderUrl(platform, state, scale) {
 }
 
 const server = new Server(
-  { name: 'mockscreenshots', version: '0.1.0' },
+  { name: 'mockscreenshots', version: PACKAGE_VERSION },
   { capabilities: { tools: {} } },
 );
 
@@ -81,8 +131,19 @@ const TOOLS = [
               ticks: { type: 'string', enum: ['sent', 'delivered', 'read'], description: 'WhatsApp/Telegram outgoing ticks.' },
               author: { type: 'string', description: 'Sender name for group chats (incoming only).' },
               service: { type: 'string', enum: ['imessage', 'sms'], description: 'iMessage blue vs SMS green.' },
+              image: {
+                type: 'object',
+                description: 'Optional static image attachment for WhatsApp chats.',
+                properties: {
+                  data: { type: 'string', description: 'Base64-encoded PNG, JPEG, or WebP bytes.' },
+                  mimeType: { type: 'string', enum: ['image/png', 'image/jpeg', 'image/webp'] },
+                  alt: { type: 'string', maxLength: 160, description: 'Accessible image description.' },
+                },
+                required: ['data', 'mimeType'],
+                additionalProperties: false,
+              },
             },
-            required: ['text', 'sender'],
+            required: ['sender'],
           },
         },
         contact: { type: 'string', description: 'Contact name, username or group name shown in the header.' },
@@ -122,14 +183,32 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 
   if (name === 'generate_fake_chat') {
     const { platform, messages, contact, status, device, dark } = args;
-    if (!PLATFORMS[platform]) {
-      return { isError: true, content: [{ type: 'text', text: `Unknown platform "${platform}". Use list_platforms.` }] };
-    }
+    if (!PLATFORMS[platform]) return errorResult(`Unknown platform "${platform}". Use list_platforms.`);
     if (!Array.isArray(messages) || messages.length === 0) {
-      return { isError: true, content: [{ type: 'text', text: 'Provide at least one message.' }] };
+      return errorResult('Provide at least one message.');
     }
     if (device && !DEVICES.includes(device)) {
-      return { isError: true, content: [{ type: 'text', text: `Unknown device "${device}". Use list_devices.` }] };
+      return errorResult(`Unknown device "${device}". Use list_devices.`);
+    }
+
+    const normalizedImages = [];
+    for (const message of messages) {
+      if (!message || typeof message !== 'object' || Array.isArray(message)) {
+        return errorResult('Each message must be an object.');
+      }
+      if (message.sender !== 'me' && message.sender !== 'them') {
+        return errorResult('Each message sender must be "me" or "them".');
+      }
+      if ((typeof message.text !== 'string' || message.text.length === 0) && !message.image) {
+        return errorResult('Each message must include text or an image attachment.');
+      }
+      if (!message.image) {
+        normalizedImages.push(null);
+        continue;
+      }
+      const checked = validateImage(message.image, platform);
+      if (checked.error) return errorResult(checked.error);
+      normalizedImages.push(checked.value);
     }
 
     const state = {
@@ -137,19 +216,24 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       ...(typeof dark === 'boolean' ? { dark } : {}),
       ...(contact ? { c: contact } : {}),
       ...(status ? { st: status } : {}),
-      m: messages.map((m) => ({
+      m: messages.map((m, index) => ({
         t: String(m.text ?? ''),
         s: m.sender === 'them' ? 'them' : 'me',
         ...(m.time ? { ti: m.time } : {}),
         ...(m.ticks ? { tk: m.ticks } : {}),
         ...(m.author ? { a: m.author } : {}),
         ...(m.service ? { sv: m.service } : {}),
+        ...(normalizedImages[index] ? { im: normalizedImages[index] } : {}),
       })),
     };
 
+    if (b64urlEncode(JSON.stringify(state)).length > MAX_RENDER_STATE_LENGTH) {
+      return errorResult('The encoded render state is too large for the production endpoint. Use a smaller image or shorter conversation.');
+    }
+
     const deepLink = buildDeepLink(platform, state);
     const fullUrl = buildRenderUrl(platform, state);          // full-res, download/share
-    const ethics = `Output is clearly fictional and watermarked — do not present it as real. See ${SITE}/ethics.`;
+    const ethics = ethicsWarning();
 
     if (args.format === 'link') {
       return { content: [{ type: 'text', text:
@@ -160,9 +244,20 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     // keep tokens down; fullUrl is retina.
     try {
       const previewUrl = buildRenderUrl(platform, state, 1);
-      const resp = await fetch(previewUrl, { signal: AbortSignal.timeout(30000) });
+      const resp = await fetch(previewUrl, { signal: AbortSignal.timeout(RENDER_TIMEOUT_MS) });
       if (!resp.ok) throw new Error(`render ${resp.status}`);
+      if (resp.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase() !== 'image/png') {
+        throw new Error('render returned an invalid content type');
+      }
+      const declaredLength = Number(resp.headers.get('content-length'));
+      if (Number.isFinite(declaredLength) && declaredLength > MAX_PREVIEW_BYTES) {
+        throw new Error('rendered preview is too large');
+      }
       const buf = Buffer.from(await resp.arrayBuffer());
+      if (buf.length === 0 || buf.length > MAX_PREVIEW_BYTES) throw new Error('rendered preview is too large');
+      if (!Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).equals(buf.subarray(0, 8))) {
+        throw new Error('render returned invalid PNG data');
+      }
       return { content: [
         { type: 'image', mimeType: 'image/png', data: buf.toString('base64') },
         { type: 'text', text:

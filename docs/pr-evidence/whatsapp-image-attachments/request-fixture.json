@@ -1,0 +1,54 @@
+{
+  "benchmark": "Frozen benchmark v1.0",
+  "siteContract": {
+    "mergedSitePr": "https://github.com/devyeshtandon/mock-screenshots/pull/3",
+    "mergeCommit": "86b6882b6bf47ad7d3bdf47132f7707a9fa3ec3f",
+    "endpoint": "GET https://mockscreenshots.com/api/render?platform=<whatsapp|whatsapp-group>&s=<base64url-json>&scale=<1..3>",
+    "messageImageState": "m[].im={src:data:image/(png|jpeg|webp);base64,...,alt?:string}",
+    "stateLimitCharacters": 8000,
+    "imageLimitBytes": 2097152,
+    "altLimitCharacters": 160,
+    "watermark": "mandatory; endpoint always invokes rendering with watermarked=true"
+  },
+  "competitors": [
+    {
+      "name": "FakeDetail WhatsApp Chat Generator",
+      "url": "https://fakedetail.com/fake-whatsapp-chat-generator",
+      "sitePrEvidence": "devyeshtandon/mock-screenshots PR #3 docs/pr-evidence/whatsapp-image-attachments/competitor-fakedetail-before.png"
+    },
+    {
+      "name": "Zeoob WhatsApp Chat Generator",
+      "url": "https://zeoob.com/generate-whatsapp-chat/",
+      "sitePrEvidence": "devyeshtandon/mock-screenshots PR #3 competitor evidence"
+    }
+  ],
+  "input": {
+    "contact": "Jamie",
+    "status": "online",
+    "device": "iphone-16-pro",
+    "dark": false,
+    "format": "image",
+    "platforms": ["whatsapp", "whatsapp-group"],
+    "messages": [
+      {
+        "sender": "them",
+        "author": "Jamie",
+        "text": "The launch moved to Friday. 🚀",
+        "time": "09:41",
+        "image": { "path": "synthetic-launch-board.png", "mimeType": "image/png", "alt": "Synthetic launch board" }
+      },
+      {
+        "sender": "me",
+        "text": "Got it — I'll update the brief.",
+        "time": "09:42",
+        "ticks": "read",
+        "image": { "path": "synthetic-launch-board.png", "mimeType": "image/png", "alt": "Synthetic launch board" }
+      }
+    ]
+  },
+  "attachment": {
+    "provenance": "Deterministically generated benign four-colour 320x180 PNG copied from the merged site PR evidence; not a user upload",
+    "sha256": "c6fb09303f1d8c66bba3cdeaff06fbba8ecabdbaf7a81d0eabb5356e799ffb05"
+  },
+  "privacy": "Synthetic Jamie/Launch labels only; no credentials, tokens, private user data, real identities, or real uploads."
+}
