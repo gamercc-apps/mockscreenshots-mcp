@@ -4,15 +4,15 @@ An [MCP](https://modelcontextprotocol.io) server that lets an AI agent compose a
 chat and get a deep link to the matching [Mock Screenshots](https://mockscreenshots.com)
 generator — pre-filled and ready to preview and download.
 
-Output is **watermarked and clearly fictional**, intended for parody, education, design
-mockups and fiction. It is **not** for deception — see
+Output is **watermark-free and fictional**, intended for parody, education, design mockups
+and fiction. It must **not** be presented as real or used for deception — see
 [the ethics policy](https://mockscreenshots.com/ethics).
 
 ## Tools
 
 | Tool | What it does |
 |------|--------------|
-| `generate_fake_chat` | Compose a conversation (platform, messages, contact, status, device, dark) → returns a rendered, watermarked PNG (inline preview + hosted URL for download/share) plus a deep link to the generator. Supports `format: "image"` (default, returns preview+URL) or `"link"` (text-only URLs). |
+| `generate_fake_chat` | Compose a conversation (platform, messages, contact, status, device, dark) → returns a rendered, watermark-free PNG (inline preview + hosted URL for download/share) plus a deep link to the generator. Supports `format: "image"` (default, returns preview+URL) or `"link"` (text-only URLs). |
 | `list_platforms` | Lists supported chat apps and their generator URLs. |
 | `list_devices` | Lists the iPhone/Android device frames. |
 
@@ -76,14 +76,17 @@ state token would require a separate site/API contract and is intentionally not 
 
 ### Screenshots
 
-Returns a **rendered, watermarked screenshot** server-side via the site's `GET /api/render` endpoint (Cloudflare Browser Rendering). Default output (`format: "image"`) includes:
-- **Inline preview image** (scaled, watermarked — displays immediately)
-- **Hosted full-res PNG URL** (download / share in DMs, always watermarked and clearly fictional)
+Returns a **rendered, watermark-free screenshot** server-side via the site's `GET /api/render` endpoint (Cloudflare Browser Rendering). Default output (`format: "image"`) includes:
+- **Inline preview image** (scaled — displays immediately)
+- **Hosted full-res PNG URL** (download / share in DMs)
 - **Deep edit link** to the generator, pre-filled with your conversation
 
 Alternately, use `format: "link"` for text-only output (just the URLs, no image preview).
 
-**Always watermarked:** Screenshots include a prominent "FAKE" watermark and cannot be disabled. This ensures they remain clearly fictional and non-deceptive for parody, education, design mockups and fiction — see [the ethics policy](https://mockscreenshots.com/ethics).
+The pixels do not carry a visible product or “FAKE” overlay. The surrounding MCP response
+still identifies the result as fictional mock output and warns users not to present it as real.
+Use it only for parody, education, design mockups, and fiction — see
+[the ethics policy](https://mockscreenshots.com/ethics).
 
 Also returns a URL like
 `https://mockscreenshots.com/fake-whatsapp-chat-generator?s=<state>` that opens the
@@ -110,11 +113,11 @@ npm start           # stdio server
 }
 ```
 
-Once published to npm you can instead use `npx -y mockscreenshots-mcp`.
+Use the published scoped package with `npx -y @gamercc-apps/mockscreenshots-mcp`.
 
 ## Publishing / distribution
 
-1. `npm publish` the `mockscreenshots-mcp` package.
+1. Publish the `@gamercc-apps/mockscreenshots-mcp` package after review and an approved release.
 2. Register on `registry.modelcontextprotocol.io` using `server.json`.
 3. Submit to mcp.so, Smithery, PulseMCP, Glama, and open a PR to `awesome-mcp-servers`.
 
@@ -126,7 +129,7 @@ distribution channel
 The MCP server itself stays tiny and stateless: it builds URLs and encodes the
 conversation into a compact, URL-safe `?s=` parameter (also read by the generator on
 load, `src/lib/share.ts`), then fetches a preview from the site's `/api/render`
-endpoint, which does the actual (always-watermarked) server-side rendering via
+endpoint, which does the actual watermark-free server-side rendering via
 Cloudflare Browser Rendering. This keeps the server dependency-light and keeps the
 human in the loop to preview, tweak and export.
 
@@ -135,4 +138,4 @@ only when they are PNG data from the fixed Mock Screenshots endpoint. The respon
 consumed with a 10 MB streaming cap and the reader is cancelled immediately when that cap
 is crossed, even when `Content-Length` is absent or inaccurate. Endpoint errors, invalid
 responses, and timeouts safely fall back to the hosted image/edit links while retaining the
-watermark, ethics warning, and (when an attachment is present) attachment privacy warning.
+fictional-output ethics warning and (when an attachment is present) attachment privacy warning.

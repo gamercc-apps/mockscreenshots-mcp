@@ -1,5 +1,10 @@
 # MCP WhatsApp image-attachment PR evidence
 
+> Archived pre-launch policy evidence for merged PR #1. The watermark observations and
+> source/version status below are historical and are superseded for current behavior by
+> `../watermark-free/`. Historical PNGs, hashes, cold-render failures, and frozen scoring are
+> intentionally retained rather than rewritten.
+
 Captured 2026-07-21 UTC with synthetic data only. This directory records the frozen benchmark, historical release-review failure, the later owner waiver and site deployment, and fresh post-deployment production results. The MCP source under test is `1ed955991b717b4bc30bf19364c01454708b2e5f`; the final evidence-only commit is linked from PR #1.
 
 ## Current status (post-deployment)
@@ -17,7 +22,7 @@ Captured 2026-07-21 UTC with synthetic data only. This directory records the fro
 - `synthetic-launch-board.png`: deterministic benign 320×180 PNG from the site evidence; SHA-256 `c6fb09303f1d8c66bba3cdeaff06fbba8ecabdbaf7a81d0eabb5356e799ffb05`.
 - `capture-production.mjs`: reproducible real `Client` + `StdioClientTransport` exercise; four attempts per platform, explicit success/fallback classification, and direct full-resolution URL probes.
 - `stdio-production-result.json`: handshake/version, per-attempt timings, content types, hosted/edit URL presence, errors, preview metadata, direct hosted PNG probe results, and preserved historical cold-failure observations.
-- `previews/whatsapp-watermarked.png` and `previews/whatsapp-group-watermarked.png`: current production inline previews.
+- `previews/whatsapp-watermarked.png` and `previews/whatsapp-group-watermarked.png`: then-current pre-launch production inline previews.
 - `frozen-rubric-results.json`: unchanged frozen weights and 83.9/100 score, with historical failed hard thresholds retained and the current owner-waiver/deployment status stated separately.
 - `SHA256SUMS`: checksums for every committed evidence input, script, record, rubric, and image.
 
@@ -64,7 +69,7 @@ Earlier independent cold-state verification observed HTTP 500 on 100/100 full-re
 - The existing 8,000-character encoded-state limit is enforced before a link or render request is produced.
 - Preview responses require HTTP success, `image/png`, a PNG signature, and at most 10 MiB; failures/timeouts return hosted/edit links with the warning text.
 - The optional public `messages[].image` maps to merged `m[].im`; text-only behavior and content types remain unchanged.
-- The current MCP path requests and warns about watermarked output. Repeated watermarking was visible in this capture, but owner policy permits watermark-free initial output; watermark presence is not a mandatory release gate.
+- The pre-launch MCP path requested and warned about watermarked output. Repeated watermarking was visible in this historical capture, but it is not the current package contract.
 - Fixtures contain no credentials, tokens, private user data, real identities, or real uploads.
 - Attachment bytes are embedded as data URLs inside the base64url JSON state carried by render/edit URLs. Base64url is not encryption. Use only non-sensitive synthetic or public attachments and treat attachment-bearing URLs as sensitive because transcripts, logs, browser history, analytics/referrers, and cache keys may retain them.
 - The MCP preview fetch uses `cache: "no-store"` and `referrerPolicy: "no-referrer"`; this does not control the deployed endpoint or intermediaries. The MCP adds no attachment or URL logging.
