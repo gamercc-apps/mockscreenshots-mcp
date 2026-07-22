@@ -14,6 +14,14 @@ const state = { c: 'Mom', m: [{ t: 'hi', s: 'me' }] };
 const serverPath = fileURLToPath(new URL('../server.mjs', import.meta.url));
 const PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZrE0AAAAASUVORK5CYII=';
 
+const forbiddenVisibleWatermarkClaim = /watermarked|watermark(?!-free)|FAKE watermark/i;
+
+const assertLaunchCleanGuidance = (text, label) => {
+  assert.match(text, /fictional mock output/i, label);
+  assert.match(text, /do not present it as real/i, label);
+  assert.doesNotMatch(text, forbiddenVisibleWatermarkClaim, label);
+};
+
 const decodeStateFromUrl = (url) => {
   const encoded = new URL(url).searchParams.get('s');
   return JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8'));
@@ -56,6 +64,50 @@ test('buildRenderUrl targets /api/render with platform+s (+scale)', () => {
   assert.match(buildRenderUrl('imessage', state, 1), /&scale=1$/);
 });
 
+test('stdio MCP describes launch-clean output without a visible-watermark claim', async () => {
+  await withStdioClient(async (client) => {
+    const tools = await client.listTools();
+    const generate = tools.tools.find((tool) => tool.name === 'generate_fake_chat');
+    assert.match(generate.description, /watermark-free/i);
+    assert.doesNotMatch(generate.description, /watermarked|watermark[^-]free|FAKE watermark/i);
+
+    const result = await client.callTool({
+      name: 'generate_fake_chat',
+      arguments: {
+        platform: 'whatsapp',
+        format: 'link',
+        messages: [{ text: 'Fictional launch mock', sender: 'them' }],
+      },
+    });
+    assert.equal(result.isError, undefined);
+    assert.match(result.content[0].text, /fictional mock output/i);
+    assert.match(result.content[0].text, /do not present it as real/i);
+    assert.doesNotMatch(result.content[0].text, /watermarked|watermark[^-]free|FAKE watermark/i);
+  });
+});
+
+test('public package README documents the scoped watermark-free contract', () => {
+  const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+  assert.match(readme, /watermark-free/i);
+  assert.match(readme, /npx -y @gamercc-apps\/mockscreenshots-mcp/i);
+  assert.doesNotMatch(readme, /always.watermarked|rendered, watermarked|prominent "FAKE" watermark/i);
+});
+
+test('visible-watermark claim guard rejects standalone and qualified variants', () => {
+  for (const claim of ['watermark', 'a watermark', 'visible watermark', 'always-watermark', 'watermarked', 'FAKE watermark']) {
+    assert.match(claim, forbiddenVisibleWatermarkClaim, claim);
+  }
+  assert.doesNotMatch('watermark-free fictional output', forbiddenVisibleWatermarkClaim);
+});
+
+test('production evidence harness requires every image-format case to have a hosted probe and records probe exceptions', () => {
+  const harness = readFileSync(new URL('../docs/pr-evidence/watermark-free/capture-production.mjs', import.meta.url), 'utf8');
+  assert.match(harness, /hostedImageProbeCases:\s*hostedImageProbeCases/);
+  assert.match(harness, /hostedImageProbeCases === imageFormatCases/);
+  assert.match(harness, /catch \(error\)/);
+  assert.match(harness, /errorName:\s*error\.name/);
+});
+
 test('stdio MCP preserves incoming and outgoing mixed text plus PNG images for WhatsApp 1:1 and group links', async () => {
   await withStdioClient(async (client) => {
     const tools = await client.listTools();
@@ -89,8 +141,7 @@ test('stdio MCP preserves incoming and outgoing mixed text plus PNG images for W
       });
       assert.equal(result.isError, undefined);
       const text = result.content[0].text;
-      assert.match(text, /watermarked/i);
-      assert.match(text, /do not present it as real/i);
+      assertLaunchCleanGuidance(text);
       assert.match(text, /attachment bytes.*URL/i);
       assert.match(text, /non-sensitive.*synthetic.*public/i);
       assert.match(text, /URL.*sensitive/i);
@@ -125,6 +176,35 @@ test('tool schema allows image-only WhatsApp messages while preserving text-only
   });
 });
 
+test('stdio MCP keeps image and link responses launch-clean across every supported platform', async () => {
+  await withRenderServer((_req, res) => {
+    res.writeHead(200, { 'content-type': 'image/png' });
+    res.end(Buffer.from(PNG_BASE64, 'base64'));
+  }, async (site) => {
+    await withStdioClient(async (client) => {
+      const platforms = ['imessage', 'whatsapp', 'whatsapp-group', 'instagram', 'telegram', 'messenger', 'snapchat'];
+      for (const platform of platforms) {
+        for (const format of ['image', 'link']) {
+          const result = await client.callTool({
+            name: 'generate_fake_chat',
+            arguments: {
+              platform,
+              format,
+              messages: [{ text: `Fictional ${platform} mock`, sender: 'them' }],
+            },
+          });
+          assert.equal(result.isError, undefined, `${platform}/${format}`);
+          const text = result.content.find((item) => item.type === 'text')?.text;
+          assertLaunchCleanGuidance(text, `${platform}/${format}`);
+          assert.match(text, new RegExp(`${site.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/api/render\\?platform=${platform}`));
+          assert.ok(text.includes(`${site}/`), `${platform}/${format} edit URL`);
+          assert.equal(result.content.some((item) => item.type === 'image'), format === 'image');
+        }
+      }
+    }, { MOCKSCREENSHOTS_SITE: site });
+  });
+});
+
 test('stdio MCP returns inline PNG plus deterministic hosted and edit URLs for an image message', async () => {
   await withRenderServer((req, res) => {
     assert.match(req.url, /^\/api\/render\?platform=whatsapp&s=.*&scale=1$/);
@@ -146,7 +226,7 @@ test('stdio MCP returns inline PNG plus deterministic hosted and edit URLs for a
         assert.deepEqual(result.content[0], { type: 'image', mimeType: 'image/png', data: PNG_BASE64 });
         assert.match(result.content[1].text, new RegExp(`Full-res \\(download/share\\): ${site.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\/api\\/render\\?`));
         assert.match(result.content[1].text, new RegExp(`Edit: ${site.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\/fake-whatsapp-chat-generator\\?s=`));
-        assert.match(result.content[1].text, /watermarked/i);
+        assertLaunchCleanGuidance(result.content[1].text);
         assert.match(result.content[1].text, /attachment bytes.*URL/i);
         assert.match(result.content[1].text, /URL.*sensitive/i);
       }
@@ -155,7 +235,7 @@ test('stdio MCP returns inline PNG plus deterministic hosted and edit URLs for a
   });
 });
 
-test('stdio MCP gracefully falls back to watermarked links on render endpoint failures and timeouts', async () => {
+test('stdio MCP gracefully falls back to launch-clean links on render endpoint failures and timeouts', async () => {
   for (const mode of ['failure', 'timeout']) {
     await withRenderServer((_req, res) => {
       if (mode === 'failure') {
@@ -182,7 +262,7 @@ test('stdio MCP gracefully falls back to watermarked links on render endpoint fa
         assert.match(result.content[0].text, /preview unavailable/i, mode);
         assert.match(result.content[0].text, /Image: http:\/\/127\.0\.0\.1:/, mode);
         assert.match(result.content[0].text, /Edit: http:\/\/127\.0\.0\.1:/, mode);
-        assert.match(result.content[0].text, /watermarked/i, mode);
+        assertLaunchCleanGuidance(result.content[0].text, mode);
         assert.match(result.content[0].text, /attachment bytes.*URL/i, mode);
         assert.match(result.content[0].text, /URL.*sensitive/i, mode);
         if (mode === 'failure') assert.match(result.content[0].text, /render 503/i);
@@ -210,7 +290,7 @@ test('stdio MCP rejects non-PNG and oversized preview responses without returnin
         assert.equal(result.content.length, 1, fixture.label);
         assert.equal(result.content[0].type, 'text', fixture.label);
         assert.match(result.content[0].text, fixture.expected, fixture.label);
-        assert.match(result.content[0].text, /watermarked/i, fixture.label);
+        assertLaunchCleanGuidance(result.content[0].text, fixture.label);
       }, { MOCKSCREENSHOTS_SITE: site, MOCKSCREENSHOTS_RENDER_TIMEOUT_MS: '500' });
     });
   }
@@ -244,7 +324,7 @@ test('stdio MCP cancels an oversized chunked preview without Content-Length and 
       assert.equal(result.content.length, 1);
       assert.equal(result.content[0].type, 'text');
       assert.match(result.content[0].text, /too large/i);
-      assert.match(result.content[0].text, /watermarked/i);
+      assertLaunchCleanGuidance(result.content[0].text);
     }, { MOCKSCREENSHOTS_SITE: site, MOCKSCREENSHOTS_RENDER_TIMEOUT_MS: '2000' });
   });
   assert.equal(responseClosed, true);
@@ -266,7 +346,7 @@ test('stdio MCP safely rejects a preview with a deceptive Content-Length', async
       assert.equal(result.content[0].type, 'text');
       assert.match(result.content[0].text, /preview unavailable/i);
       assert.match(result.content[0].text, /terminated|aborted|body/i);
-      assert.match(result.content[0].text, /watermarked/i);
+      assertLaunchCleanGuidance(result.content[0].text);
     }, { MOCKSCREENSHOTS_SITE: site, MOCKSCREENSHOTS_RENDER_TIMEOUT_MS: '2000' });
   });
 });
@@ -332,7 +412,7 @@ test('stdio MCP applies cheap message, field, and aggregate attachment limits be
       const result = await client.callTool({ name: 'generate_fake_chat', arguments: fixture.arguments });
       assert.equal(result.isError, true, fixture.label);
       assert.match(result.content[0].text, fixture.expected, fixture.label);
-      assert.match(result.content[0].text, /watermarked/i, fixture.label);
+      assertLaunchCleanGuidance(result.content[0].text, fixture.label);
     }
   });
 });
@@ -401,8 +481,7 @@ test('stdio MCP rejects unsafe, unsupported, missing, oversized, and endpoint-in
       const result = await client.callTool({ name: 'generate_fake_chat', arguments: args });
       assert.equal(result.isError, true, label);
       assert.match(result.content[0].text, expected, label);
-      assert.match(result.content[0].text, /watermarked/i, label);
-      assert.match(result.content[0].text, /ethics/i, label);
+      assertLaunchCleanGuidance(result.content[0].text, label);
     }
   });
 });
@@ -410,6 +489,9 @@ test('stdio MCP rejects unsafe, unsupported, missing, oversized, and endpoint-in
 test('stdio handshake version matches package and registry metadata', async () => {
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   const registry = JSON.parse(readFileSync(new URL('../server.json', import.meta.url), 'utf8'));
+  assert.equal(pkg.version, '0.1.7');
+  assert.match(pkg.description, /watermark-free/i);
+  assert.match(registry.description, /watermark-free/i);
   await withStdioClient(async (client) => {
     assert.equal(client.getServerVersion().version, pkg.version);
     assert.equal(registry.version, pkg.version);

@@ -4,7 +4,7 @@
  *
  * Exposes tools that let an AI agent compose a fake chat/screenshot and get back
  * a deep link to the matching Mock Screenshots generator, pre-filled and ready to
- * export. Honest by design: the tool returns a server-rendered, watermarked PNG
+ * export. Honest by design: the tool returns a server-rendered, watermark-free PNG
  * (inline preview + hosted URL from the site's /api/render endpoint) alongside a
  * deep link the user can open to preview, tweak and download.
  *
@@ -61,7 +61,7 @@ const b64urlEncode = (str) =>
   Buffer.from(str, 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 const ethicsWarning = () =>
-  `Output is clearly fictional and watermarked — do not present it as real. See ${SITE}/ethics.`;
+  `Fictional mock output — do not present it as real. See ${SITE}/ethics.`;
 
 const attachmentPrivacyWarning = () =>
   'Privacy: Attachment bytes are embedded in the hosted image and edit URLs. Use only non-sensitive synthetic or public attachments, and treat every attachment URL as sensitive because it may be retained in MCP transcripts, client/browser history, proxy/CDN logs, analytics/referrers, and cache keys.';
@@ -156,7 +156,7 @@ const TOOLS = [
   {
     name: 'generate_fake_chat',
     description:
-      'Compose a fake chat screenshot (iMessage, WhatsApp, Instagram DM, Telegram, Messenger, Snapchat) and get a deep link to the Mock Screenshots generator, pre-filled and ready to preview and download. Output is watermarked and clearly fictional; intended for parody, education, design mockups and fiction — not deception.',
+      'Compose a fake chat screenshot (iMessage, WhatsApp, Instagram DM, Telegram, Messenger, Snapchat) and get a deep link to the Mock Screenshots generator, pre-filled and ready to preview and download. Output is watermark-free and fictional; intended for parody, education, design mockups and fiction — not deception.',
     inputSchema: {
       type: 'object',
       properties: {

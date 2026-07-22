@@ -1,0 +1,833 @@
+{
+  "capturedAtUtc": "2026-07-22T06:50:03.071Z",
+  "command": "node docs/pr-evidence/watermark-free/capture-production.mjs",
+  "baseSha": "5a0f7b64ba7f703459d2c5141ec7639042df8b02",
+  "workingTreeDirty": true,
+  "productionSite": "https://mockscreenshots.com",
+  "transport": "Client + StdioClientTransport",
+  "packageVersion": "0.1.7",
+  "serverVersion": {
+    "name": "mockscreenshots",
+    "version": "0.1.7"
+  },
+  "toolNames": [
+    "generate_fake_chat",
+    "list_platforms",
+    "list_devices"
+  ],
+  "generateToolDescription": "Compose a fake chat screenshot (iMessage, WhatsApp, Instagram DM, Telegram, Messenger, Snapchat) and get a deep link to the Mock Screenshots generator, pre-filled and ready to preview and download. Output is watermark-free and fictional; intended for parody, education, design mockups and fiction — not deception.",
+  "cases": [
+    {
+      "id": "imessage-image-text-only",
+      "platform": "imessage",
+      "format": "image",
+      "attachment": false,
+      "durationMs": 334,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 334,
+          "contentTypes": [
+            "image",
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "image",
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=imessage&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-imessage-generator?s=<redacted-synthetic-state>",
+      "inline": {
+        "path": "outputs/imessage-inline-launch-clean.png",
+        "bytes": 35270,
+        "sha256": "b6e3916ec80338b6d5b1a359e773ac0f0790332498458c62287dd2af81ec4311",
+        "pngSignature": true,
+        "ocr": {
+          "available": false,
+          "forbiddenPixelTextFound": null,
+          "text": null
+        }
+      },
+      "hosted": {
+        "attempt": 1,
+        "durationMs": 389,
+        "status": 200,
+        "contentType": "image/png",
+        "bytes": 164258,
+        "bodySha256": "6ba6f07083f85b781c0e9830ba8aad21774afc60c83b20897ac6757f7d8fafe9",
+        "cacheControl": "public, max-age=86400, immutable",
+        "xRobotsTag": "noindex",
+        "attempts": [
+          {
+            "attempt": 1,
+            "durationMs": 389,
+            "status": 200,
+            "contentType": "image/png",
+            "bytes": 164258,
+            "bodySha256": "6ba6f07083f85b781c0e9830ba8aad21774afc60c83b20897ac6757f7d8fafe9"
+          }
+        ],
+        "image": {
+          "path": "outputs/imessage-hosted-launch-clean.png",
+          "bytes": 164258,
+          "sha256": "6ba6f07083f85b781c0e9830ba8aad21774afc60c83b20897ac6757f7d8fafe9",
+          "pngSignature": true,
+          "ocr": {
+            "available": false,
+            "forbiddenPixelTextFound": null,
+            "text": null
+          }
+        }
+      }
+    },
+    {
+      "id": "imessage-link-text-only",
+      "platform": "imessage",
+      "format": "link",
+      "attachment": false,
+      "durationMs": 3,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 3,
+          "contentTypes": [
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=imessage&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-imessage-generator?s=<redacted-synthetic-state>"
+    },
+    {
+      "id": "whatsapp-image-text-only",
+      "platform": "whatsapp",
+      "format": "image",
+      "attachment": false,
+      "durationMs": 34,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 34,
+          "contentTypes": [
+            "image",
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "image",
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=whatsapp&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-whatsapp-chat-generator?s=<redacted-synthetic-state>",
+      "inline": {
+        "path": "outputs/whatsapp-inline-launch-clean.png",
+        "bytes": 38143,
+        "sha256": "d1c5c08bc4549bdc20ce6156e2aa9ef9306c29e29250e68fae5602268cf68c34",
+        "pngSignature": true,
+        "ocr": {
+          "available": false,
+          "forbiddenPixelTextFound": null,
+          "text": null
+        }
+      },
+      "hosted": {
+        "attempt": 1,
+        "durationMs": 44,
+        "status": 200,
+        "contentType": "image/png",
+        "bytes": 174117,
+        "bodySha256": "991574796858feadc634294998ef3cb46b10504af1e6b26b3f7683f6aef8f1de",
+        "cacheControl": "public, max-age=86400, immutable",
+        "xRobotsTag": "noindex",
+        "attempts": [
+          {
+            "attempt": 1,
+            "durationMs": 44,
+            "status": 200,
+            "contentType": "image/png",
+            "bytes": 174117,
+            "bodySha256": "991574796858feadc634294998ef3cb46b10504af1e6b26b3f7683f6aef8f1de"
+          }
+        ],
+        "image": {
+          "path": "outputs/whatsapp-hosted-launch-clean.png",
+          "bytes": 174117,
+          "sha256": "991574796858feadc634294998ef3cb46b10504af1e6b26b3f7683f6aef8f1de",
+          "pngSignature": true,
+          "ocr": {
+            "available": false,
+            "forbiddenPixelTextFound": null,
+            "text": null
+          }
+        }
+      }
+    },
+    {
+      "id": "whatsapp-link-text-only",
+      "platform": "whatsapp",
+      "format": "link",
+      "attachment": false,
+      "durationMs": 4,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 4,
+          "contentTypes": [
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=whatsapp&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-whatsapp-chat-generator?s=<redacted-synthetic-state>"
+    },
+    {
+      "id": "whatsapp-group-image-text-only",
+      "platform": "whatsapp-group",
+      "format": "image",
+      "attachment": false,
+      "durationMs": 5840,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 5840,
+          "contentTypes": [
+            "image",
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "image",
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=whatsapp-group&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-whatsapp-group-chat-generator?s=<redacted-synthetic-state>",
+      "inline": {
+        "path": "outputs/whatsapp-group-inline-launch-clean.png",
+        "bytes": 41066,
+        "sha256": "77b7bb642720070a6f56d75723892b6e67538bbf61822683ec83fe7fc617a2b2",
+        "pngSignature": true,
+        "ocr": {
+          "available": false,
+          "forbiddenPixelTextFound": null,
+          "text": null
+        }
+      },
+      "hosted": {
+        "attempt": 1,
+        "durationMs": 312,
+        "status": 200,
+        "contentType": "image/png",
+        "bytes": 185615,
+        "bodySha256": "7c9d03d834e6301021f8882b62370518fc28593f7941a47931b50e467cbab4a1",
+        "cacheControl": "public, max-age=86400, immutable",
+        "xRobotsTag": "noindex",
+        "attempts": [
+          {
+            "attempt": 1,
+            "durationMs": 312,
+            "status": 200,
+            "contentType": "image/png",
+            "bytes": 185615,
+            "bodySha256": "7c9d03d834e6301021f8882b62370518fc28593f7941a47931b50e467cbab4a1"
+          }
+        ],
+        "image": {
+          "path": "outputs/whatsapp-group-hosted-launch-clean.png",
+          "bytes": 185615,
+          "sha256": "7c9d03d834e6301021f8882b62370518fc28593f7941a47931b50e467cbab4a1",
+          "pngSignature": true,
+          "ocr": {
+            "available": false,
+            "forbiddenPixelTextFound": null,
+            "text": null
+          }
+        }
+      }
+    },
+    {
+      "id": "whatsapp-group-link-text-only",
+      "platform": "whatsapp-group",
+      "format": "link",
+      "attachment": false,
+      "durationMs": 3,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 3,
+          "contentTypes": [
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=whatsapp-group&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-whatsapp-group-chat-generator?s=<redacted-synthetic-state>"
+    },
+    {
+      "id": "instagram-image-text-only",
+      "platform": "instagram",
+      "format": "image",
+      "attachment": false,
+      "durationMs": 523,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 523,
+          "contentTypes": [
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=instagram&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-instagram-chat-generator?s=<redacted-synthetic-state>",
+      "hosted": {
+        "attempt": 1,
+        "durationMs": 31,
+        "status": 200,
+        "contentType": "image/png",
+        "bytes": 196019,
+        "bodySha256": "19904a01deaddea49f8786292fc86cebaec362dc5f3e49d66ff63cd5e68e9de5",
+        "cacheControl": "public, max-age=86400, immutable",
+        "xRobotsTag": "noindex",
+        "attempts": [
+          {
+            "attempt": 1,
+            "durationMs": 31,
+            "status": 200,
+            "contentType": "image/png",
+            "bytes": 196019,
+            "bodySha256": "19904a01deaddea49f8786292fc86cebaec362dc5f3e49d66ff63cd5e68e9de5"
+          }
+        ],
+        "image": {
+          "path": "outputs/instagram-hosted-launch-clean.png",
+          "bytes": 196019,
+          "sha256": "19904a01deaddea49f8786292fc86cebaec362dc5f3e49d66ff63cd5e68e9de5",
+          "pngSignature": true,
+          "ocr": {
+            "available": false,
+            "forbiddenPixelTextFound": null,
+            "text": null
+          }
+        }
+      }
+    },
+    {
+      "id": "instagram-link-text-only",
+      "platform": "instagram",
+      "format": "link",
+      "attachment": false,
+      "durationMs": 5,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 4,
+          "contentTypes": [
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=instagram&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-instagram-chat-generator?s=<redacted-synthetic-state>"
+    },
+    {
+      "id": "telegram-image-text-only",
+      "platform": "telegram",
+      "format": "image",
+      "attachment": false,
+      "durationMs": 817,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 816,
+          "contentTypes": [
+            "image",
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "image",
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=telegram&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-telegram-chat-generator?s=<redacted-synthetic-state>",
+      "inline": {
+        "path": "outputs/telegram-inline-launch-clean.png",
+        "bytes": 30643,
+        "sha256": "a262b0e526b429630d19ce02890b7a73a96d9c36a917e8f25cd1b9e8b9d9ff8a",
+        "pngSignature": true,
+        "ocr": {
+          "available": false,
+          "forbiddenPixelTextFound": null,
+          "text": null
+        }
+      },
+      "hosted": {
+        "attempt": 1,
+        "durationMs": 116,
+        "status": 200,
+        "contentType": "image/png",
+        "bytes": 150794,
+        "bodySha256": "db83325e5dd56785a864eca7e5f092bb6badefaed236c642d07dae461e33b99b",
+        "cacheControl": "public, max-age=86400, immutable",
+        "xRobotsTag": "noindex",
+        "attempts": [
+          {
+            "attempt": 1,
+            "durationMs": 116,
+            "status": 200,
+            "contentType": "image/png",
+            "bytes": 150794,
+            "bodySha256": "db83325e5dd56785a864eca7e5f092bb6badefaed236c642d07dae461e33b99b"
+          }
+        ],
+        "image": {
+          "path": "outputs/telegram-hosted-launch-clean.png",
+          "bytes": 150794,
+          "sha256": "db83325e5dd56785a864eca7e5f092bb6badefaed236c642d07dae461e33b99b",
+          "pngSignature": true,
+          "ocr": {
+            "available": false,
+            "forbiddenPixelTextFound": null,
+            "text": null
+          }
+        }
+      }
+    },
+    {
+      "id": "telegram-link-text-only",
+      "platform": "telegram",
+      "format": "link",
+      "attachment": false,
+      "durationMs": 2,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 2,
+          "contentTypes": [
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=telegram&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-telegram-chat-generator?s=<redacted-synthetic-state>"
+    },
+    {
+      "id": "messenger-image-text-only",
+      "platform": "messenger",
+      "format": "image",
+      "attachment": false,
+      "durationMs": 544,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 543,
+          "contentTypes": [
+            "image",
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "image",
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=messenger&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-messenger-chat-generator?s=<redacted-synthetic-state>",
+      "inline": {
+        "path": "outputs/messenger-inline-launch-clean.png",
+        "bytes": 38255,
+        "sha256": "ca319d74171258d32a6b1ab19e9bba401fa18421ed7c786e07cbc26cbae288c5",
+        "pngSignature": true,
+        "ocr": {
+          "available": false,
+          "forbiddenPixelTextFound": null,
+          "text": null
+        }
+      },
+      "hosted": {
+        "attempt": 1,
+        "durationMs": 4867,
+        "status": 200,
+        "contentType": "image/png",
+        "bytes": 187956,
+        "bodySha256": "e81679b46bf1b29bd1200758ec2df5667d99607142be10c5f4ff04e6ab33f738",
+        "cacheControl": "public, max-age=86400, immutable",
+        "xRobotsTag": "noindex",
+        "attempts": [
+          {
+            "attempt": 1,
+            "durationMs": 4867,
+            "status": 200,
+            "contentType": "image/png",
+            "bytes": 187956,
+            "bodySha256": "e81679b46bf1b29bd1200758ec2df5667d99607142be10c5f4ff04e6ab33f738"
+          }
+        ],
+        "image": {
+          "path": "outputs/messenger-hosted-launch-clean.png",
+          "bytes": 187956,
+          "sha256": "e81679b46bf1b29bd1200758ec2df5667d99607142be10c5f4ff04e6ab33f738",
+          "pngSignature": true,
+          "ocr": {
+            "available": false,
+            "forbiddenPixelTextFound": null,
+            "text": null
+          }
+        }
+      }
+    },
+    {
+      "id": "messenger-link-text-only",
+      "platform": "messenger",
+      "format": "link",
+      "attachment": false,
+      "durationMs": 4,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 4,
+          "contentTypes": [
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=messenger&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-messenger-chat-generator?s=<redacted-synthetic-state>"
+    },
+    {
+      "id": "snapchat-image-text-only",
+      "platform": "snapchat",
+      "format": "image",
+      "attachment": false,
+      "durationMs": 723,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 723,
+          "contentTypes": [
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=snapchat&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-snapchat-generator?s=<redacted-synthetic-state>",
+      "hosted": {
+        "attempt": 1,
+        "durationMs": 36,
+        "status": 200,
+        "contentType": "image/png",
+        "bytes": 144564,
+        "bodySha256": "8fa7d165e5d761c9108d9fc7ff30c7685ccf08f90c61c383192d3f0e204b3c06",
+        "cacheControl": "public, max-age=86400, immutable",
+        "xRobotsTag": "noindex",
+        "attempts": [
+          {
+            "attempt": 1,
+            "durationMs": 36,
+            "status": 200,
+            "contentType": "image/png",
+            "bytes": 144564,
+            "bodySha256": "8fa7d165e5d761c9108d9fc7ff30c7685ccf08f90c61c383192d3f0e204b3c06"
+          }
+        ],
+        "image": {
+          "path": "outputs/snapchat-hosted-launch-clean.png",
+          "bytes": 144564,
+          "sha256": "8fa7d165e5d761c9108d9fc7ff30c7685ccf08f90c61c383192d3f0e204b3c06",
+          "pngSignature": true,
+          "ocr": {
+            "available": false,
+            "forbiddenPixelTextFound": null,
+            "text": null
+          }
+        }
+      }
+    },
+    {
+      "id": "snapchat-link-text-only",
+      "platform": "snapchat",
+      "format": "link",
+      "attachment": false,
+      "durationMs": 7,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 7,
+          "contentTypes": [
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=snapchat&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-snapchat-generator?s=<redacted-synthetic-state>"
+    },
+    {
+      "id": "whatsapp-image-attachment",
+      "platform": "whatsapp",
+      "format": "image",
+      "attachment": true,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 466,
+          "contentTypes": [
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "attachmentPrivacyGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=whatsapp&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-whatsapp-chat-generator?s=<redacted-synthetic-state>",
+      "hosted": {
+        "attempt": 4,
+        "durationMs": 473,
+        "status": 500,
+        "contentType": "application/json",
+        "bytes": 25,
+        "bodySha256": "b969277c36879554a88ac7e22ae3c44697248e295d3d9aa5530ff1a2fa021590",
+        "attempts": [
+          {
+            "attempt": 1,
+            "durationMs": 460,
+            "status": 500,
+            "contentType": "application/json",
+            "bytes": 25,
+            "bodySha256": "b969277c36879554a88ac7e22ae3c44697248e295d3d9aa5530ff1a2fa021590"
+          },
+          {
+            "attempt": 2,
+            "durationMs": 465,
+            "status": 500,
+            "contentType": "application/json",
+            "bytes": 25,
+            "bodySha256": "b969277c36879554a88ac7e22ae3c44697248e295d3d9aa5530ff1a2fa021590"
+          },
+          {
+            "attempt": 3,
+            "durationMs": 486,
+            "status": 500,
+            "contentType": "application/json",
+            "bytes": 25,
+            "bodySha256": "b969277c36879554a88ac7e22ae3c44697248e295d3d9aa5530ff1a2fa021590"
+          },
+          {
+            "attempt": 4,
+            "durationMs": 473,
+            "status": 500,
+            "contentType": "application/json",
+            "bytes": 25,
+            "bodySha256": "b969277c36879554a88ac7e22ae3c44697248e295d3d9aa5530ff1a2fa021590"
+          }
+        ],
+        "image": null
+      }
+    },
+    {
+      "id": "whatsapp-link-attachment",
+      "platform": "whatsapp",
+      "format": "link",
+      "attachment": true,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 5,
+          "contentTypes": [
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "attachmentPrivacyGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=whatsapp&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-whatsapp-chat-generator?s=<redacted-synthetic-state>"
+    },
+    {
+      "id": "whatsapp-group-image-attachment",
+      "platform": "whatsapp-group",
+      "format": "image",
+      "attachment": true,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 567,
+          "contentTypes": [
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "attachmentPrivacyGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=whatsapp-group&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-whatsapp-group-chat-generator?s=<redacted-synthetic-state>",
+      "hosted": {
+        "attempt": 1,
+        "durationMs": 65,
+        "status": 200,
+        "contentType": "image/png",
+        "bytes": 190046,
+        "bodySha256": "fbfcefc7e33a93475031ddc3c320667b5108f163d4b9bf8e1d5cf3fdf70634c1",
+        "cacheControl": "public, max-age=86400, immutable",
+        "xRobotsTag": "noindex",
+        "attempts": [
+          {
+            "attempt": 1,
+            "durationMs": 65,
+            "status": 200,
+            "contentType": "image/png",
+            "bytes": 190046,
+            "bodySha256": "fbfcefc7e33a93475031ddc3c320667b5108f163d4b9bf8e1d5cf3fdf70634c1"
+          }
+        ],
+        "image": {
+          "path": "outputs/whatsapp-group-attachment-hosted-launch-clean.png",
+          "bytes": 190046,
+          "sha256": "fbfcefc7e33a93475031ddc3c320667b5108f163d4b9bf8e1d5cf3fdf70634c1",
+          "pngSignature": true,
+          "ocr": {
+            "available": false,
+            "forbiddenPixelTextFound": null,
+            "text": null
+          }
+        }
+      }
+    },
+    {
+      "id": "whatsapp-group-link-attachment",
+      "platform": "whatsapp-group",
+      "format": "link",
+      "attachment": true,
+      "protocolAttempts": [
+        {
+          "attempt": 1,
+          "durationMs": 2,
+          "contentTypes": [
+            "text"
+          ]
+        }
+      ],
+      "isError": false,
+      "contentTypes": [
+        "text"
+      ],
+      "fictionalGuidance": true,
+      "attachmentPrivacyGuidance": true,
+      "forbiddenWatermarkClaim": false,
+      "hostedUrl": "https://mockscreenshots.com/api/render?platform=whatsapp-group&s=<redacted-synthetic-state>",
+      "editUrl": "https://mockscreenshots.com/fake-whatsapp-group-chat-generator?s=<redacted-synthetic-state>"
+    }
+  ],
+  "summary": {
+    "totalCases": 18,
+    "successfulCases": 18,
+    "allPlatforms": true,
+    "bothFormats": true,
+    "whatsappAttachmentCases": 4,
+    "allResponsesRetainFictionalGuidance": true,
+    "noResponseClaimsVisibleWatermark": true,
+    "inlineImageSuccesses": 5,
+    "safeTextLinkFallbacks": 4,
+    "allImageFormatsReturnedInlinePngOrSafeFallback": true,
+    "imageFormatCases": 9,
+    "hostedImageProbeCases": 9,
+    "everyImageFormatCaseHasHostedProbe": true,
+    "allHostedImageProbesHttp200Png": false,
+    "ocrAvailableForEveryImage": false,
+    "noForbiddenWatermarkTextDetectedByOcr": null,
+    "packageHandshakeVersionConsistent": true
+  },
+  "coverageNotes": {
+    "endpointErrorsTimeoutsAndUnsafeResponses": "Covered by real Client + StdioClientTransport tests with controlled HTTP endpoint fixtures in test/server.test.mjs.",
+    "visualPixelInspection": "OCR is an automated text-region check only. Representative inline and hosted PNGs require independent human visual inspection before merge.",
+    "publication": "No tag, npm publish, or MCP Registry publication was performed."
+  }
+}

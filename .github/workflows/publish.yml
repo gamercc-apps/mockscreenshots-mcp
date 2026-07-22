@@ -14,11 +14,74 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out the tagged commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies reproducibly
+        run: npm ci
+
+      - name: Verify exact tag commit and version metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_COMMIT=$(git rev-parse HEAD)
+          TAG_COMMIT=$(git rev-parse "${GITHUB_REF}^{commit}")
+          test "$HEAD_COMMIT" = "$GITHUB_SHA"
+          test "$TAG_COMMIT" = "$GITHUB_SHA"
+          node scripts/verify-release.mjs "$GITHUB_REF_NAME"
+
+      - name: Run tests
+        run: npm test
+
+      - name: Ensure release checks leave tracked files unchanged
+        run: git diff --exit-code
+
+      - name: Verify exact npm package contents
+        shell: bash
+        run: |
+          npm pack --dry-run --json > "$RUNNER_TEMP/npm-pack.json"
+          node - "$RUNNER_TEMP/npm-pack.json" <<'NODE'
+          const fs = require('node:fs');
+          const [pack] = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          const actual = pack.files.map(({ path }) => path).sort();
+          const expected = [
+            'LICENSE',
+            'README.md',
+            'package.json',
+            'server.json',
+            'server.mjs',
+          ].sort();
+          if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+            console.error('Unexpected npm package contents.');
+            console.error({ expected, actual });
+            process.exit(1);
+          }
+          console.log(`Verified ${pack.filename}: ${actual.join(', ')}`);
+          NODE
+
+      - name: Install checksum-verified mcp-publisher v1.8.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARCHIVE="$RUNNER_TEMP/mcp-publisher_v1.8.0_linux_amd64.tar.gz"
+          curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
+            --output "$ARCHIVE" \
+            "https://github.com/modelcontextprotocol/registry/releases/download/v1.8.0/mcp-publisher_linux_amd64.tar.gz"
+          echo "1370446bbe74d562608e8005a6ccce02d146a661fbd78674e11cc70b9618d6cf  $ARCHIVE" | sha256sum --check
+          tar -xzf "$ARCHIVE" mcp-publisher
+
+      - name: Validate MCP registry schema and semantics
+        run: ./mcp-publisher validate server.json
+
       - name: Publish to npm
         # Idempotent: skip if this version is already on npm, so the job can be
         # safely re-run when a LATER step (e.g. the registry OIDC login) fails
@@ -29,19 +92,23 @@ jobs:
           if npm view "$NAME@$VER" version >/dev/null 2>&1; then
             echo "npm already has $NAME@$VER — skipping publish"
           else
-            npm publish --access public
+            npm publish --access public --provenance
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Install mcp-publisher
-        run: curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+
       - name: Publish to MCP registry
         # Retry the OIDC login — the GitHub OIDC token endpoint occasionally
         # returns a transient 503 (v0.1.5 hit this).
         run: |
           sleep 20            # let npm propagate the mcpName link before validation
+          authenticated=false
           for i in 1 2 3; do
-            ./mcp-publisher login github-oidc && break
+            if ./mcp-publisher login github-oidc; then
+              authenticated=true
+              break
+            fi
             echo "OIDC login attempt $i failed; retrying in 15s..."; sleep 15
           done
+          test "$authenticated" = true
           ./mcp-publisher publish
